@@ -1,0 +1,2 @@
+/bus0/ft_sensor0/ft_sensor_readings/wrench /ft_compensated /camera/color/image_raw/compressed /franka_state_controller/franka_states
+

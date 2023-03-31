@@ -1,0 +1,22 @@
+<launch>
+
+  <arg name="robot" default="fr3" />
+  <arg name="robot_ip" />
+  <arg name="load_gripper" default="false"/>
+  <arg name="use_FT_sensor" default="true"/>
+  <arg name="FT_prefix" default="ft_sensor0" />
+  <include file="$(find panda_moveit_config)/launch/franka_control.launch" pass_all_args="true" />
+
+  <include file="$(find bota_demo)/launch/BFT_SENS_SER_M8_fr3.launch" pass_all_args="true" />
+
+  <arg name="color_width" default="1920"/>
+  <arg name="color_height" default="1080"/>
+  <arg name="color_fps" default="30"/>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch" pass_all_args="true" />
+
+  <node name="$(anon dynparam)" pkg="dynamic_reconfigure" type="dynparam" args="set_from_parameters camera/color/image_raw/compressed">
+    <param name="format" type="string" value="jpeg" />  
+    <param name="jpeg_quality" type="double" value="90.0" />
+  </node>
+
+</launch>

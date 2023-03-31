@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="fr3_moveit_test" pkg="dlo_parameter_id" type="fr3_moveit_test.py" respawn="false" output="screen">
+  </node>
+
+</launch>
