@@ -105,11 +105,11 @@ class MoveGroupPythonIntefaceTutorial(object):
     ## ^^^^^^^^^^^^^^^^^^^^^^^^
     joint_goal = self.move_group.get_current_joint_values()
     joint_goal[0] = 0
-    joint_goal[1] = -pi/4
+    joint_goal[1] = -0.7156
     joint_goal[2] = 0
-    joint_goal[3] = -3*pi/4
+    joint_goal[3] = -1.693
     joint_goal[4] = 0
-    joint_goal[5] = pi/2
+    joint_goal[5] = 0.9774
     joint_goal[6] = 0
 
     # The go command can be called with joint values, poses, or without any
@@ -305,17 +305,17 @@ def main():
     input()
     tutorial = MoveGroupPythonIntefaceTutorial()
 
-    #print("============ Press `Enter` to execute a movement using a joint state goal ...")
+    print("============ Press `Enter` to execute a movement using a joint state goal ...")
+    input()
+    tutorial.go_to_joint_state()
+
+    #print("============ Press `Enter` to plan a movement using a pose goal ...")
     #input()
-    #tutorial.go_to_joint_state()
+    #pose_plan = tutorial.plan_pose_goal()
 
-    print("============ Press `Enter` to plan a movement using a pose goal ...")
-    input()
-    pose_plan = tutorial.plan_pose_goal()
-
-    print("============ Press `Enter` to execute a movement using a pose goal ...")
-    input()
-    tutorial.execute_pose(pose_plan)
+    #print("============ Press `Enter` to execute a movement using a pose goal ...")
+    #input()
+    #tutorial.execute_pose(pose_plan)
 
     # print("============ Press `Enter` to plan and display a Cartesian path ...")
     # input()

@@ -94,88 +94,24 @@ def actuate_phi_axis(cycles=2):
 
 
 def ft_orientation_cycle():
-  move_group.go(joints=[0.0, -pi/4, 0.0, -3*pi/4, 0.0, pi/2, 0], wait=True) # EE close to [0.3, 0.0, 0.75] oriented Z down
-  move_group.stop()
-  reset_ft_gravity_aligned()
+  curJoints = move_group.get_current_state().joint_state.position
   print("============ Press enter")
   input()
-  move_group.go(joints=[0.0, -pi/4, 0.0, -3*pi/4, 0.0, pi, 0], wait=True) # EE close to [0.3, 0.0, 0.75] oriented Z down
+  move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5], curJoints[6]+pi/2], wait=True)
   move_group.stop()
+
+  curJoints = move_group.get_current_state().joint_state.position
   print("============ Press enter")
   input()
-  move_group.go(joints=[0.0, -pi/4, 0.0, -3*pi/4, 0.0, pi/2, 0], wait=True) # EE close to [0.3, 0.0, 0.75] oriented Z down
+  move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5], curJoints[6]-pi], wait=True)
   move_group.stop()
 
+  curJoints = move_group.get_current_state().joint_state.position
+  print("============ Press enter")
+  input()
+  move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5], curJoints[6]+pi/2], wait=True)
+  move_group.stop()
 
-# def actuate_swing():
-#     waypoints = []
-#     wpose = move_group.get_current_pose().pose
-
-#     wpose.position.x -= 0.03
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 0.991
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.131
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x -= 0.02
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 1.0
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.0
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x += 0.02
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 0.991
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = -0.131
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x += 0.08
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x -= 0.02
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 1.0
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.0
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x -= 0.08
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 0.991
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.131
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x += 0.02
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 1.0
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.0
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x += 0.02
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 0.991
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = -0.131
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x += 0.08
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x -= 0.02
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 1.0
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.0
-#     waypoints.append(copy.deepcopy(wpose))
-#     wpose.position.x -= 0.08
-#     wpose.orientation.w = 0.0
-#     wpose.orientation.x = 0.991
-#     wpose.orientation.y = 0.0
-#     wpose.orientation.z = 0.131
-
-#     (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
-#     print("============ Press enter to actuate swing")
-#     input()
-#     if fraction == 1.0:
-#       move_group.execute(plan, wait=True)
-#     else:
-#       print("ERROR: planning failed at %d of trajectory", fraction)
 
 
 if __name__ == '__main__':
@@ -188,8 +124,8 @@ if __name__ == '__main__':
   scene = moveit_commander.PlanningSceneInterface()
   group_name = "fr3_arm"
   move_group = moveit_commander.MoveGroupCommander(group_name)
-  move_group.set_max_acceleration_scaling_factor(0.5)
-  move_group.set_max_velocity_scaling_factor(0.5)
+  move_group.set_max_acceleration_scaling_factor(0.2)
+  move_group.set_max_velocity_scaling_factor(0.2)
   planning_frame = move_group.get_planning_frame()
   print("============ Planning frame: %s" % planning_frame)
   eef_link = move_group.get_end_effector_link()
@@ -209,46 +145,17 @@ if __name__ == '__main__':
 
   print("============ Press enter to vertically align and zero FT sensor")
   input()
-  move_group.go(joints=[0.0, -pi/4, 0.0, -3*pi/4, 0.0, pi/2, 0], wait=True) # EE close to [0.3, 0.0, 0.75] oriented Z down
+  move_group.go(joints=[0.0, -0.7156, 0.0, -1.693, 0.0, 0.9774, 0], wait=True) # EE close to [0.2, 0.0, 0.75] oriented Z down
   move_group.stop()
   curPos = move_group.get_current_pose().pose.position
-  align_ft_z_at(x=curPos.x,y=curPos.y,z=curPos.z)
+  align_ft_z_at(x=0.35,y=0.0,z=0.75)
   reset_ft_gravity_aligned()
 
-  # curJoints = move_group.get_current_state().joint_state.position
-  # print("============ Press enter")
-  # input()
-  # move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5]+pi/2, curJoints[6]], wait=True)
-  # move_group.stop()
-
-  curJoints = move_group.get_current_state().joint_state.position
-  print("============ Press enter")
+  print("============ Press enter to actuate x axis")
   input()
-  move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5], curJoints[6]+pi/2], wait=True)
-  move_group.stop()
+  actuate_x_axis(0.03,10)
 
-  curJoints = move_group.get_current_state().joint_state.position
-  print("============ Press enter")
-  input()
-  move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5], curJoints[6]-pi], wait=True)
-  move_group.stop()
-
-  curJoints = move_group.get_current_state().joint_state.position
-  print("============ Press enter")
-  input()
-  move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5], curJoints[6]+pi/2], wait=True)
-  move_group.stop()
-
-  # curJoints = move_group.get_current_state().joint_state.position
-  # print("============ Press enter")
-  # input()
-  # move_group.go(joints=[curJoints[0], curJoints[1], curJoints[2], curJoints[3], curJoints[4], curJoints[5]-pi/2, curJoints[6]], wait=True)
-  # move_group.stop()
-
-  # print("============ Press enter to actuate x axis")
-  # input()
-  # actuate_x_axis(0.03, 1)
-
-  # print("============ Press enter to actuate phi axis")
-  # input()
-  # actuate_phi_axis()
+  #print("============ Press enter to actuate phi axis")
+  #input()
+  #actuate_phi_axis()
+  
