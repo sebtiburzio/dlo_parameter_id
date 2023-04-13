@@ -43,16 +43,18 @@ if __name__ == '__main__':
                 count += 1
     #%%
     count = 0
-    for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw'):
-            if count == -1:#1e9:
-                depth = bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
+    for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw/compressed'):
+            if count == 1:#1e9:
+                depth = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
                 depth_array = np.array(depth, dtype=np.uint16)
                 section = 600
+                print(depth_array)
                 plt.plot(depth_array[section,:])
                 plt.show()
                 plt.imshow(depth_array, cmap='gray')
                 plt.plot([0,1920], [section, section], 'r-')
-                #cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # TODO - figure out how to save depth image
+                plt.show()
+                cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # TODO - figure out how to save depth image
             count += 1
 
     #%%
