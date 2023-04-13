@@ -9,12 +9,9 @@
 
   <include file="$(find bota_demo)/launch/BFT_SENS_SER_M8_fr3.launch" pass_all_args="true" />
 
-  <arg name="color_width" default="1920"/>
-  <arg name="color_height" default="1080"/>
+  <arg name="color_width" default="1280"/>
+  <arg name="color_height" default="720"/>
   <arg name="color_fps" default="30"/>
-  <arg name="depth_width" default="424"/>
-  <arg name="depth_height" default="240"/>
-  <arg name="depth_fps" default="30"/>
   <arg name="align_depth" default="true"/>
   <include file="$(find realsense2_camera)/launch/rs_camera.launch" pass_all_args="true" />
 
@@ -23,4 +20,13 @@
     <param name="jpeg_quality" type="double" value="90.0" />
   </node>
 
+  <!-- <node name="$(anon dynparam)" pkg="dynamic_reconfigure" type="dynparam" args="set_from_parameters camera/aligned_depth_to_color/image_raw/compressedDepth"> -->
+    <!-- <param name="format" type="string" value="png" /> -->
+    <!-- <param name="png_level" type="int" value="1" /> -->
+  <!-- </node> -->
+
 </launch>
+
+
+
+
