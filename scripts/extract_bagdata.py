@@ -21,9 +21,9 @@ if __name__ == '__main__':
         print("Please provide a bag file name wihtout extension as argument!")
         exit()
     bag_name = str(sys.argv[1])
-    bag = rosbag.Bag('./../data/' + bag_name + '.bag', "r") # TODO - check if changed path structure works
+    bag = rosbag.Bag('./' + bag_name + '.bag', "r") # TODO - check if changed path structure works
 
-    save_dir = './../data/' + bag_name
+    save_dir = './' + bag_name
     print(save_dir)
     img_dir = save_dir + '/images'
     print(img_dir)
@@ -44,17 +44,18 @@ if __name__ == '__main__':
     #%%
     count = 0
     for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw/compressed'):
-            if count == 1:#1e9:
+            if count < 1e9:
                 depth = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
-                depth_array = np.array(depth, dtype=np.uint16)
-                section = 600
-                print(depth_array)
-                plt.plot(depth_array[section,:])
-                plt.show()
-                plt.imshow(depth_array, cmap='gray')
-                plt.plot([0,1920], [section, section], 'r-')
-                plt.show()
-                cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # TODO - figure out how to save depth image
+                cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # seems to save the data properly if read back in with cv2.imread('', cv2.IMREAD_UNCHANGED)
+                # depth_array = np.array(depth, dtype=np.uint16)
+                # depth_array.astype(np.uint16)
+                # section = 600
+                # print(depth_array)
+                # plt.plot(depth_array[section,:])
+                # plt.show()
+                # plt.imshow(depth_array, cmap='gray')
+                # plt.plot([0,1280], [section, section], 'r-')
+                # plt.show()
             count += 1
 
     #%%
