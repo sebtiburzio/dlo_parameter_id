@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ## BEGIN_SUB_TUTORIAL imports
 ##
@@ -75,17 +75,17 @@ class MoveGroupPythonIntefaceTutorial(object):
     ## Getting Basic Information
     ## ^^^^^^^^^^^^^^^^^^^^^^^^^
     planning_frame = move_group.get_planning_frame()
-    print "============ Planning frame: %s" % planning_frame
+    print("============ Planning frame: %s" % planning_frame)
 
     eef_link = move_group.get_end_effector_link()
-    print "============ End effector link: %s" % eef_link
+    print("============ End effector link: %s" % eef_link)
 
     group_names = robot.get_group_names()
-    print "============ Available Planning Groups:", robot.get_group_names()
+    print("============ Available Planning Groups:", robot.get_group_names())
 
-    print "============ Printing robot state"
-    print robot.get_current_state()
-    print ""
+    print("============ Printing robot state")
+    print(robot.get_current_state())
+    print("")
 
     move_group.set_max_acceleration_scaling_factor(0.1)
     move_group.set_max_velocity_scaling_factor(0.1)
@@ -105,11 +105,11 @@ class MoveGroupPythonIntefaceTutorial(object):
     ## ^^^^^^^^^^^^^^^^^^^^^^^^
     joint_goal = self.move_group.get_current_joint_values()
     joint_goal[0] = 0
-    joint_goal[1] = -pi/4
+    joint_goal[1] = -0.7156
     joint_goal[2] = 0
-    joint_goal[3] = -3*pi/4
+    joint_goal[3] = -1.693
     joint_goal[4] = 0
-    joint_goal[5] = pi/2
+    joint_goal[5] = 0.9774
     joint_goal[6] = 0
 
     # The go command can be called with joint values, poses, or without any
@@ -137,7 +137,7 @@ class MoveGroupPythonIntefaceTutorial(object):
     pose_goal.orientation.w = 0.0
     pose_goal.position.x = 0.3
     pose_goal.position.y = 0.0
-    pose_goal.position.z = 0.55
+    pose_goal.position.z = 0.75
 
     self.move_group.set_pose_target(pose_goal)
     plan = self.move_group.plan()
@@ -295,41 +295,41 @@ class MoveGroupPythonIntefaceTutorial(object):
 
 def main():
   try:
-    print ""
-    print "--------------------------------"
-    print "FR3 Test"
-    print "--------------------------------"
-    print "Press Ctrl-D to exit at any time"
-    print ""
-    print "============ Press `Enter` to begin the tutorial by setting up the moveit_commander ..."
-    raw_input()
+    print("")
+    print("--------------------------------")
+    print("FR3 Test")
+    print("--------------------------------")
+    print("Press Ctrl-D to exit at any time")
+    print("")
+    print("============ Press `Enter` to begin the tutorial by setting up the moveit_commander ...")
+    input()
     tutorial = MoveGroupPythonIntefaceTutorial()
 
-    print "============ Press `Enter` to execute a movement using a joint state goal ..."
-    raw_input()
+    print("============ Press `Enter` to execute a movement using a joint state goal ...")
+    input()
     tutorial.go_to_joint_state()
 
-    print "============ Press `Enter` to plan a movement using a pose goal ..."
-    raw_input()
-    pose_plan = tutorial.plan_pose_goal()
+    #print("============ Press `Enter` to plan a movement using a pose goal ...")
+    #input()
+    #pose_plan = tutorial.plan_pose_goal()
 
-    print "============ Press `Enter` to execute a movement using a pose goal ..."
-    raw_input()
-    tutorial.execute_pose(pose_plan)
+    #print("============ Press `Enter` to execute a movement using a pose goal ...")
+    #input()
+    #tutorial.execute_pose(pose_plan)
 
-    # print "============ Press `Enter` to plan and display a Cartesian path ..."
-    # raw_input()
+    # print("============ Press `Enter` to plan and display a Cartesian path ...")
+    # input()
     # cartesian_plan, fraction = tutorial.plan_cartesian_path()
 
-    print "============ Press `Enter` to plan and display an orientation path ..."
-    raw_input()
+    print("============ Press `Enter` to plan and display an orientation path ...")
+    input()
     cartesian_plan, fraction = tutorial.plan_orientation_path()
 
-    print "============ Press `Enter` to execute a saved path ..."
-    raw_input()
+    print("============ Press `Enter` to execute a saved path ...")
+    input()
     tutorial.execute_plan(cartesian_plan)
 
-    print "============ Python tutorial demo complete!"
+    print("============ Python tutorial demo complete!")
   except rospy.ROSInterruptException:
     return
   except KeyboardInterrupt:
