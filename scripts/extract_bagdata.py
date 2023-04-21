@@ -18,10 +18,12 @@ if __name__ == '__main__':
     bridge = CvBridge()
 
     if len(sys.argv) < 2:
-        print("Please provide a bag file name wihtout extension as argument!")
+        print("Please provide a bag file name as argument!")
         exit()
     bag_name = str(sys.argv[1])
-    bag = rosbag.Bag('./' + bag_name + '.bag', "r") # TODO - check if changed path structure works
+    if bag_name[-4:] == '.bag':
+        bag_name = bag_name[:-4]
+    bag = rosbag.Bag('./' + bag_name + '.bag', "r")
 
     save_dir = './' + bag_name
     print(save_dir)
