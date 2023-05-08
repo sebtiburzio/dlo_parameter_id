@@ -68,12 +68,12 @@ if __name__ == '__main__':
                 f.write(str(msg))
             count += 1
     #%%
-    count = 0
-    for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/camera_info'):
-        if count == 0:
-            with open(save_dir + '/depth_camera_info.txt', 'w') as f:
-                f.write(str(msg))
-            count += 1     
+    # count = 0
+    # for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/camera_info'):
+    #     if count == 0:
+    #         with open(save_dir + '/depth_camera_info.txt', 'w') as f:
+    #             f.write(str(msg))
+    #         count += 1     
     #%%
     with open(save_dir + '/EE_pose.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
