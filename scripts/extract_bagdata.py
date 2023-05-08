@@ -44,21 +44,21 @@ if __name__ == '__main__':
                 cv2.imwrite(img_dir + '/' + str(timestamp) + '.jpg', image)
                 count += 1
     #%%
-    count = 0
-    for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw/compressed'):
-            if count < 1e9:
-                depth = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
-                cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # seems to save the data properly if read back in with cv2.imread('', cv2.IMREAD_UNCHANGED)
-                # depth_array = np.array(depth, dtype=np.uint16)
-                # depth_array.astype(np.uint16)
-                # section = 600
-                # print(depth_array)
-                # plt.plot(depth_array[section,:])
-                # plt.show()
-                # plt.imshow(depth_array, cmap='gray')
-                # plt.plot([0,1280], [section, section], 'r-')
-                # plt.show()
-            count += 1
+    # count = 0
+    # for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw/compressed'):
+    #         if count < 1e9:
+    #             depth = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
+    #             cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # seems to save the data properly if read back in with cv2.imread('', cv2.IMREAD_UNCHANGED)
+    #             # depth_array = np.array(depth, dtype=np.uint16)
+    #             # depth_array.astype(np.uint16)
+    #             # section = 600
+    #             # print(depth_array)
+    #             # plt.plot(depth_array[section,:])
+    #             # plt.show()
+    #             # plt.imshow(depth_array, cmap='gray')
+    #             # plt.plot([0,1280], [section, section], 'r-')
+    #             # plt.show()
+    #         count += 1
 
     #%%
     count = 0

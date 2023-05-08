@@ -170,13 +170,13 @@ if __name__ == '__main__':
   align_ft_z_at(x=0.4,y=0.0,z=0.8)
   reset_ft_gravity_aligned()
   
-  print("============ Press enter to actuate link 6")
-  input()
-  actuate_joint_6()
-
-  # print("============ Press enter to actuate x axis")
+  # print("============ Press enter to actuate link 6")
   # input()
-  # actuate_x_axis(0.03,2)
+  # actuate_joint_6()
+
+  print("============ Press enter to actuate x axis")
+  input()
+  actuate_x_axis(0.03,2)
 
   #print("============ Press enter to actuate phi axis")
   #input()
