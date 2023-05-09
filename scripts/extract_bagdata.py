@@ -11,6 +11,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.spatial.transform import Rotation as R
 
 #%%
 if __name__ == '__main__':
@@ -44,37 +45,6 @@ if __name__ == '__main__':
                 cv2.imwrite(img_dir + '/' + str(timestamp) + '.jpg', image)
                 count += 1
     #%%
-    # count = 0
-    # for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw/compressed'):
-    #         if count < 1e9:
-    #             depth = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
-    #             cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # seems to save the data properly if read back in with cv2.imread('', cv2.IMREAD_UNCHANGED)
-    #             # depth_array = np.array(depth, dtype=np.uint16)
-    #             # depth_array.astype(np.uint16)
-    #             # section = 600
-    #             # print(depth_array)
-    #             # plt.plot(depth_array[section,:])
-    #             # plt.show()
-    #             # plt.imshow(depth_array, cmap='gray')
-    #             # plt.plot([0,1280], [section, section], 'r-')
-    #             # plt.show()
-    #         count += 1
-
-    #%%
-    count = 0
-    for topic, msg, timestamp in bag.read_messages(topics='/camera/color/camera_info'):
-        if count == 0:
-            with open(save_dir + '/color_camera_info.txt', 'w') as f:
-                f.write(str(msg))
-            count += 1
-    #%%
-    # count = 0
-    # for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/camera_info'):
-    #     if count == 0:
-    #         with open(save_dir + '/depth_camera_info.txt', 'w') as f:
-    #             f.write(str(msg))
-    #         count += 1     
-    #%%
     with open(save_dir + '/EE_pose.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(['ts', 'rxx', 'ryx', 'rzx', 'w1', 'rxy', 'ryy', 'rzy', 'w2', 'rxz', 'ryz', 'rzz', 'w3', 'px', 'py', 'pz', 'w4'])
@@ -90,6 +60,46 @@ if __name__ == '__main__':
         for topic, msg, timestamp in bag.read_messages(topics='/ft_compensated'):
             writer.writerow([timestamp, msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z,
                                         msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z])
+    #%%
+    # TODO - check if extracting TFs works:
+    for topic, msg, timestamp in bag.read_messages(topics='/camera/color/camera_info'):
+        #f.write(str(msg))
+        K_cam = np.array(msg.K).reshape(3,3)
+        break
+    
+    for file in os.listdir('./../'):
+        if file.startswith('calib') and file.endswith('.launch'):
+            R_line = np.loadtxt(file, dtype='str', delimiter=' ', skiprows=5, max_rows=1)
+            R_cam = R.from_quat([float(R_line[11]), float(R_line[12]), float(R_line[13]), float(R_line[14])]).as_matrix() # cam to base frame
+            T_cam = np.array([[float(R_line[6][6:])],[float(R_line[7])],[float(R_line[8])]])
+            E_base = np.hstack([R_cam, T_cam]) # cam to base frame
+            E_cam = np.hstack([R_cam.T, -R_cam.T@T_cam]) # base to cam frame
+            P = K_cam@E_cam
+    np.savez(save_dir + '/TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
+
 #%%
 bag.close()
         
+#%%
+# count = 0
+# for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/image_raw/compressed'):
+#         if count < 1e9:
+#             depth = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
+#             cv2.imwrite(depth_dir + '/' + str(timestamp) + '.png', depth) # seems to save the data properly if read back in with cv2.imread('', cv2.IMREAD_UNCHANGED)
+#             # depth_array = np.array(depth, dtype=np.uint16)
+#             # depth_array.astype(np.uint16)
+#             # section = 600
+#             # print(depth_array)
+#             # plt.plot(depth_array[section,:])
+#             # plt.show()
+#             # plt.imshow(depth_array, cmap='gray')
+#             # plt.plot([0,1280], [section, section], 'r-')
+#             # plt.show()
+#         count += 1
+#
+# count = 0
+# for topic, msg, timestamp in bag.read_messages(topics='/camera/aligned_depth_to_color/camera_info'):
+#     if count == 0:
+#         with open(save_dir + '/depth_camera_info.txt', 'w') as f:
+#             f.write(str(msg))
+#         count += 1     
