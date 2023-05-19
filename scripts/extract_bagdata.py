@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 #%%
+# Run in the same directory as the bag file
 
 import sys
 import os
@@ -61,13 +62,11 @@ if __name__ == '__main__':
             writer.writerow([timestamp, msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z,
                                         msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z])
     #%%
-    # TODO - check if extracting TFs works:
     for topic, msg, timestamp in bag.read_messages(topics='/camera/color/camera_info'):
-        #f.write(str(msg))
         K_cam = np.array(msg.K).reshape(3,3)
         break
     
-    for file in os.listdir('./../'):
+    for file in os.listdir():
         if file.startswith('calib') and file.endswith('.launch'):
             R_line = np.loadtxt(file, dtype='str', delimiter=' ', skiprows=5, max_rows=1)
             R_cam = R.from_quat([float(R_line[11]), float(R_line[12]), float(R_line[13]), float(R_line[14])]).as_matrix() # cam to base frame
