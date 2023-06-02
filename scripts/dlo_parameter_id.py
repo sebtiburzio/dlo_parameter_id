@@ -28,19 +28,26 @@ def align_ft_z_at(x=0.3,y=0.0,z=0.55):
   move_group.clear_pose_targets()
 
 
-def reset_ft_gravity_aligned():
-  try:
-    gripper_mass = rospy.get_param("/imu_gravity_compensation/gripper_mass")
-  except KeyError:
-    print("WARNING: No gripper mass found for gravity compensation offset")
-    gripper_mass = 0.0
+def reset_ft_gravity_aligned(mass=None):
+
   ft_offset = geometry_msgs.msg.Wrench()
-  ft_offset.force.x = 0.0
-  ft_offset.force.y = 0.0
-  ft_offset.force.z = gripper_mass*9.81
   ft_offset.torque.x = 0.0
   ft_offset.torque.y = 0.0
   ft_offset.torque.z = 0.0
+  ft_offset.force.x = 0.0
+  ft_offset.force.y = 0.0
+
+  if mass = None:
+    try:
+      gripper_mass = rospy.get_param("/imu_gravity_compensation/gripper_mass")
+    except KeyError:
+      print("WARNING: No gripper mass found for gravity compensation offset")
+      gripper_mass = 0.0
+  else:
+    gripper_mass = mass
+
+  ft_offset.force.z = gripper_mass*9.81
+
   reset_ft_wrench_srv(ft_offset)
 
 
@@ -168,7 +175,7 @@ if __name__ == '__main__':
   move_group.stop()
   curPos = move_group.get_current_pose().pose.position
   align_ft_z_at(x=0.4,y=0.0,z=0.8)
-  reset_ft_gravity_aligned()
+  reset_ft_gravity_aligned(0.72)
   
   # print("============ Press enter to actuate link 6")
   # input()
