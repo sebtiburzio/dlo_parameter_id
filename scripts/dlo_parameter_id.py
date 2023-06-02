@@ -37,7 +37,7 @@ def reset_ft_gravity_aligned(mass=None):
   ft_offset.force.x = 0.0
   ft_offset.force.y = 0.0
 
-  if mass = None:
+  if mass == None:
     try:
       gripper_mass = rospy.get_param("/imu_gravity_compensation/gripper_mass")
     except KeyError:
@@ -63,6 +63,30 @@ def actuate_x_axis(distance=0.5, cycles=2):
     wpose.position.x += 2*distance
     waypoints.append(copy.deepcopy(wpose))
   wpose.position.x -= distance
+  waypoints.append(copy.deepcopy(wpose))
+
+  (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
+  if fraction == 1.0:
+    move_group.execute(plan, wait=True)
+  else:
+    print("ERROR: planning failed at %d of trajectory", fraction)
+
+def actuate_xz_axes(cycles=2):
+  waypoints = []
+  wpose = move_group.get_current_pose().pose
+ 
+  wpose.position.x -= 0.05
+  wpose.position.z += 0.05
+  waypoints.append(copy.deepcopy(wpose))
+  for n in range(cycles):
+    wpose.position.x += 0.05
+    wpose.position.z -= 0.05
+    waypoints.append(copy.deepcopy(wpose))
+    wpose.position.x -= 0.05
+    wpose.position.z += 0.05
+    waypoints.append(copy.deepcopy(wpose))
+  wpose.position.x += 0.05
+  wpose.position.z -= 0.05
   waypoints.append(copy.deepcopy(wpose))
 
   (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
@@ -175,7 +199,7 @@ if __name__ == '__main__':
   move_group.stop()
   curPos = move_group.get_current_pose().pose.position
   align_ft_z_at(x=0.4,y=0.0,z=0.8)
-  reset_ft_gravity_aligned(0.72)
+  reset_ft_gravity_aligned(0.907)
   
   # print("============ Press enter to actuate link 6")
   # input()
@@ -184,6 +208,10 @@ if __name__ == '__main__':
   print("============ Press enter to actuate x axis")
   input()
   actuate_x_axis(0.03,2)
+
+  # print("============ Press enter to actuate xz axes")
+  # input()
+  # actuate_xz_axes(2)
 
   #print("============ Press enter to actuate phi axis")
   #input()
