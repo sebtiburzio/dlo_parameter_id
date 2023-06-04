@@ -74,7 +74,7 @@ if __name__ == '__main__':
             E_base = np.hstack([R_cam, T_cam]) # cam to base frame
             E_cam = np.hstack([R_cam.T, -R_cam.T@T_cam]) # base to cam frame
             P = K_cam@E_cam
-    np.savez(save_dir + '/TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
+            np.savez(save_dir + '/TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
 
 #%%
 bag.close()
