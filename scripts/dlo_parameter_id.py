@@ -71,6 +71,7 @@ def actuate_x_axis(distance=0.5, cycles=2):
   else:
     print("ERROR: planning failed at %d of trajectory", fraction)
 
+
 def actuate_xz_axes(cycles=2):
   waypoints = []
   wpose = move_group.get_current_pose().pose
@@ -199,15 +200,15 @@ if __name__ == '__main__':
   move_group.stop()
   curPos = move_group.get_current_pose().pose.position
   align_ft_z_at(x=0.4,y=0.0,z=0.8)
-  reset_ft_gravity_aligned(0.907)
+  reset_ft_gravity_aligned(0.8281 + 0.078635) # object + FT adapter
   
-  # print("============ Press enter to actuate link 6")
-  # input()
-  # actuate_joint_6()
-
   print("============ Press enter to actuate x axis")
   input()
   actuate_x_axis(0.03,2)
+
+  # print("============ Press enter to actuate link 6")
+  # input()
+  # actuate_joint_6()
 
   # print("============ Press enter to actuate xz axes")
   # input()
