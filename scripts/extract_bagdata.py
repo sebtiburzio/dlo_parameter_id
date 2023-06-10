@@ -40,7 +40,7 @@ if __name__ == '__main__':
         os.mkdir(depth_dir)
     #%%
     count = 0
-    for topic, msg, timestamp in bag.read_messages(topics='/camera/color/image_raw/compressed'):
+    for topic, msg, timestamp in bag.read_messages(topics=['camera/color/image_raw/compressed','/camera/color/image_raw/compressed']):
             if count < 1e9:
                 image = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
                 cv2.imwrite(img_dir + '/' + str(timestamp) + '.jpg', image)

@@ -199,12 +199,12 @@ if __name__ == '__main__':
   move_group.go(joints=[0.0, -0.1, 0.0, -1.0, 0.0, 0.9, 0], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
   move_group.stop()
   curPos = move_group.get_current_pose().pose.position
-  align_ft_z_at(x=0.4,y=0.0,z=0.8)
-  reset_ft_gravity_aligned(0.8281 + 0.078635) # object + FT adapter
+  align_ft_z_at(x=0.4,y=0.15,z=0.8)
+  # reset_ft_gravity_aligned(0.8281 + 0.078635) # object + FT adapter
   
-  print("============ Press enter to actuate x axis")
-  input()
-  actuate_x_axis(0.03,2)
+  # print("============ Press enter to actuate x axis")
+  # input()
+  # actuate_x_axis(0.03,2)
 
   # print("============ Press enter to actuate link 6")
   # input()
