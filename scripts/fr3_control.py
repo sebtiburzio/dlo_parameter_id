@@ -7,14 +7,14 @@ import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
 import rokubimini_msgs.srv
-import quaternion
+import tf
 from math import pi
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 
 
 def move_home():
-  move_group.go(joints=[0.0, -0.1, 0.0, -1.0, 0.0, 0.9, 0], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
+  move_group.go(joints=[0.0, -0.1, 0.0, -1.0, 0.0, 0.9, -pi/4], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
   move_group.stop()
 
 
@@ -31,6 +31,21 @@ def move_to_quaternion(x,y,z, qx, qy, qz ,qw):
   move_group.go(wait=True)
   move_group.stop()
   move_group.clear_pose_targets()
+
+
+#TODO - figure out why cant plan the exectute separaetly
+def plan_to_extr_XZY(x,y,z, X, Z, Y):
+  pose_goal = geometry_msgs.msg.Pose()
+  quat = tf.transformations.quaternion_from_euler(X, Z, Y, 'sxzy')
+  pose_goal.orientation.x = quat[0]
+  pose_goal.orientation.y = quat[1]
+  pose_goal.orientation.z = quat[2]
+  pose_goal.orientation.w = quat[3]
+  pose_goal.position.x = x
+  pose_goal.position.y = y
+  pose_goal.position.z = z
+  move_group.set_pose_target(pose_goal)
+  move_group.plan()
 
 
 def move_to_extr_XZY(x,y,z, X, Z, Y):
