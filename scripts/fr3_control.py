@@ -13,8 +13,8 @@ from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 
 
-def move_home():
-  move_group.go(joints=[0.0, -0.1, 0.0, -1.0, 0.0, 0.9, -pi/4], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
+def move_home(joint1=0.0):
+  move_group.go(joints=[joint1, -0.1, 0.0, -1.0, 0.0, 0.9, -pi/4], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
   move_group.stop()
 
 
@@ -113,8 +113,8 @@ robot = moveit_commander.RobotCommander()
 scene = moveit_commander.PlanningSceneInterface()
 group_name = "fr3_arm"
 move_group = moveit_commander.MoveGroupCommander(group_name)
-move_group.set_max_acceleration_scaling_factor(0.3)
-move_group.set_max_velocity_scaling_factor(0.3)
+move_group.set_max_acceleration_scaling_factor(0.1)
+move_group.set_max_velocity_scaling_factor(0.1)
 planning_frame = move_group.get_planning_frame()
 print("============ Planning frame: %s" % planning_frame)
 eef_link = move_group.get_end_effector_link()
