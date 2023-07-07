@@ -76,7 +76,6 @@ def plan_to(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   move_group.set_pose_target(pose_goal)
   move_group.plan()
 
-
 def move_to(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   pose_goal = geometry_msgs.msg.Pose()
   quat = tf.transformations.quaternion_from_euler(a1, a2, a3, r + ax1 + ax2 + ax3)
@@ -125,6 +124,33 @@ def move_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   else:
     print("ERROR: planning failed at %d of trajectory", fraction)
  
+
+def plan_cart_path(xs,zs,phis,execute=False):
+  waypoints = []
+
+  for n in range(len(xs)):
+    pose_goal = geometry_msgs.msg.Pose()
+    quat = tf.transformations.quaternion_from_euler(pi, pi/4, phis[n], 'sxzy')
+    pose_goal.orientation.x = quat[0]
+    pose_goal.orientation.y = quat[1]
+    pose_goal.orientation.z = quat[2]
+    pose_goal.orientation.w = quat[3]
+    pose_goal.position.x = xs[n]
+    pose_goal.position.y = 0.0
+    pose_goal.position.z = zs[n]
+    print(pose_goal)
+    print(waypoints)
+    waypoints.append(copy.deepcopy(pose_goal))
+
+  (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
+  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.03,0.03)
+  if fraction == 1.0:
+    print("planning success")
+    if execute:
+      move_group.execute(plan, wait=True)
+  else:
+    print("ERROR: planning failed at %d of trajectory", fraction)
+
 
 def align_ft_z_at(x=0.3,y=0.0,z=0.55):
   pose_goal = geometry_msgs.msg.Pose()
