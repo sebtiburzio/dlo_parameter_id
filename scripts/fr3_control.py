@@ -14,8 +14,8 @@ from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 
 
-def move_home(joint1=0.0):
-  move_group.go(joints=[joint1, -0.1, 0.0, -1.0, 0.0, 0.9, -pi/4], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
+def move_home(joint1=0.0,joint6=0.9):
+  move_group.go(joints=[joint1, -0.1, 0.0, -1.0, 0.0, joint6, 0], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
   move_group.stop()
 
 
