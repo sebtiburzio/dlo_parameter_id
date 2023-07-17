@@ -74,11 +74,11 @@ Visualization Manager:
       eef: fr3_link8
       group: fr3_arm
       image_topic: /camera/color/image_raw
-      longest board side (m): 0.11
+      longest board side (m): 0.110000
       margin size (px): 2
       marker border (bits): 1
       marker size (px): 50
-      measured marker size (m): 0.012
+      measured marker size (m): 0.012000
       object: handeye_target
       sensor: camera_color_optical_frame
       sensor_mount_type: 0

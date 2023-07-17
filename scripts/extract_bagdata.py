@@ -31,13 +31,11 @@ if __name__ == '__main__':
     print(save_dir)
     img_dir = save_dir + '/images'
     print(img_dir)
-    depth_dir = save_dir + '/depth'
-    print(depth_dir)
     if os.path.exists(save_dir) == False:
         print('making dirs')
         os.mkdir(save_dir)
         os.mkdir(img_dir)
-        os.mkdir(depth_dir)
+
     #%%
     count = 0
     for topic, msg, timestamp in bag.read_messages(topics=['camera/color/image_raw/compressed','/camera/color/image_raw/compressed']):
@@ -62,19 +60,19 @@ if __name__ == '__main__':
             writer.writerow([timestamp, msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z,
                                         msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z])
     #%%
-    for topic, msg, timestamp in bag.read_messages(topics='/camera/color/camera_info'):
-        K_cam = np.array(msg.K).reshape(3,3)
-        break
+    # for topic, msg, timestamp in bag.read_messages(topics='/camera/color/camera_info'):
+    #     K_cam = np.array(msg.K).reshape(3,3)
+    #     break
     
-    for file in os.listdir():
-        if file.startswith('calib') and file.endswith('.launch'):
-            R_line = np.loadtxt(file, dtype='str', delimiter=' ', skiprows=5, max_rows=1)
-            R_cam = R.from_quat([float(R_line[11]), float(R_line[12]), float(R_line[13]), float(R_line[14])]).as_matrix() # cam to base frame
-            T_cam = np.array([[float(R_line[6][6:])],[float(R_line[7])],[float(R_line[8])]])
-            E_base = np.hstack([R_cam, T_cam]) # cam to base frame
-            E_cam = np.hstack([R_cam.T, -R_cam.T@T_cam]) # base to cam frame
-            P = K_cam@E_cam
-            np.savez(save_dir + '/TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
+    # for file in os.listdir():
+    #     if file.startswith('calib') and file.endswith('.launch'):
+    #         R_line = np.loadtxt(file, dtype='str', delimiter=' ', skiprows=5, max_rows=1)
+    #         R_cam = R.from_quat([float(R_line[11]), float(R_line[12]), float(R_line[13]), float(R_line[14])]).as_matrix() # cam to base frame
+    #         T_cam = np.array([[float(R_line[6][6:])],[float(R_line[7])],[float(R_line[8])]])
+    #         E_base = np.hstack([R_cam, T_cam]) # cam to base frame
+    #         E_cam = np.hstack([R_cam.T, -R_cam.T@T_cam]) # base to cam frame
+    #         P = K_cam@E_cam
+    #         np.savez(save_dir + '/TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
 
 #%%
 bag.close()

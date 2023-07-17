@@ -25,7 +25,7 @@ def plot_vis():
     marked_UV = marked_UV/marked_UV[2]
 
     ax.scatter(EE_UV[0],EE_UV[1],s=15,c='red',zorder=2.5)
-    ax.scatter(marked_UV[0,:],marked_UV[1,:],s=15,c='yellow',zorder=2.5)
+    ax.scatter(marked_UV[0,:],marked_UV[1,:],s=5,c='yellow',zorder=2.5)
 
     # Z-plane grid
     grid_btm = P_adj@np.array([np.linspace(-0.2,0.2,5).T,-0.2*np.ones(5),np.zeros(5),np.ones(5)])
@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_1207'
+calib_name = 'calib_1407'
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
@@ -81,6 +81,7 @@ for topic, msg, timestamp in bag.read_messages(topics=['camera/color/image_raw/c
 # Get the first EE position
 for topic, msg, timestamp in bag.read_messages(topics='/franka_state_controller/franka_states'):
     EE_XYZ = np.array([msg.O_T_EE[12], msg.O_T_EE[13], msg.O_T_EE[14], msg.O_T_EE[15]])
+
     break
 
 # Get the intrinsic camera matrix
@@ -91,7 +92,7 @@ for topic, msg, timestamp in bag.read_messages(topics='/camera/color/camera_info
 # Get the extrinsic and projection matrices
 for file in os.listdir(save_dir):
     if file == (calib_name + '.launch'):
-        R_line = np.loadtxt(file, dtype='str', delimiter=' ', skiprows=5, max_rows=1)
+        R_line = np.loadtxt(save_dir + file, dtype='str', delimiter=' ', skiprows=5, max_rows=1)
         R_cam = R.from_quat([float(R_line[11]), float(R_line[12]), float(R_line[13]), float(R_line[14])]).as_matrix() # cam to base frame
         T_cam = np.array([[float(R_line[6][6:])],[float(R_line[7])],[float(R_line[8])]])
         E_base = np.hstack([R_cam, T_cam]) # cam to base frame
@@ -105,16 +106,17 @@ P_adj = P
 
 #%%
 # Set up any marked points to compare
-marked_XYZ = np.array([[0.153,0.1485,0.0,1.0], # FR3 TERI base
+marked_XYZ = np.array([
+                    #    [0.453,0.0,-0.03,1.0],
+                    #    [0.453,0.1485,-0.03,1.0],
+                    #    [0.453,-0.1505,-0.03,1.0],
+                    #    [0.153,0.4485,-0.03,1.0],
+                       [0.153,0.1485,0.0,1.0], # FR3 TERI base
                        [0.153,-0.1505,0.0,1.0], # FR3 TERI base
                        [0.055,0.0,0.14,1.0], # FR3 link0 arrow
                        [-0.011,-0.08,0.01,1.0], # FR3 bolt
                        [-0.011,0.08,0.01,1.0], # FR3 bolt
-                       [0.0715,0.0,0.00135,1.0], # FR3 link0 front edge
-                       [0.453,0.0,-0.03,1.0],
-                       [0.453,0.1485,-0.03,1.0],
-                       [0.453,-0.1505,-0.03,1.0],
-                       [0.153,0.4485,-0.03,1.0]
+                       [0.0715,0.0,0.00135,1.0] # FR3 link0 front edge
                     ]).T 
 
 # Plot the visualistion of known geometry on the current calibration
@@ -123,7 +125,7 @@ plot_vis()
 #%%
 # Adjust the extrinsic calibration
 adj_X = 0.0
-adj_Y = -0.005
+adj_Y = 0.0
 adj_Z = 0.0
 adj_R = 0.0
 adj_P = 0.0
@@ -133,11 +135,17 @@ R_adj = R.from_euler('xyz', [adj_R, adj_P, adj_Yaw]).as_matrix()@R_adj
 E_base_adj = np.hstack([R_adj, T_adj]) 
 E_cam_adj = np.hstack([R_adj.T, -R_adj.T@T_adj])
 P_adj = K_cam@E_cam_adj
+print('X: ' + str(adj_X) + ' Y: ' + str(adj_Y) + ' Z: ' + str(adj_Z) + ' R: ' + str(adj_R) + ' P: ' + str(adj_P) + ' Yaw: ' + str(adj_Yaw))
 plot_vis()
 
 #%%
 # Save the original and adjusted calibrations
 np.savez(save_dir + 'TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
-np.savez(save_dir + './TFs_adj.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam)
+np.savez(save_dir + './TFs_adj2.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam, T_adj=T_adj, R_adj=R_adj)
 
+# %%
+TFs_adj = np.load(save_dir + 'TFs_adj2.npz')
+P_adj = TFs_adj['P']
+T_adj = TFs_adj['T_adj']
+R_adj = TFs_adj['R_adj']
 # %%
