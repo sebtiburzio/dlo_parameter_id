@@ -9,6 +9,7 @@ import moveit_msgs.msg
 import geometry_msgs.msg
 import rokubimini_msgs.srv
 import tf
+import numpy as np
 from math import pi
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
@@ -166,30 +167,6 @@ def align_ft_z_at(x=0.3,y=0.0,z=0.55):
   move_group.stop()
   move_group.clear_pose_targets()
 
-
-def reset_ft_gravity_aligned(mass=None):
-
-  ft_offset = geometry_msgs.msg.Wrench()
-  ft_offset.torque.x = 0.0
-  ft_offset.torque.y = 0.0
-  ft_offset.torque.z = 0.0
-  ft_offset.force.x = 0.0
-  ft_offset.force.y = 0.0
-
-  if mass == None:
-    try:
-      gripper_mass = rospy.get_param("/imu_gravity_compensation/gripper_mass")
-    except KeyError:
-      print("WARNING: No gripper mass found for gravity compensation offset")
-      gripper_mass = 0.0
-  else:
-    gripper_mass = mass
-
-  ft_offset.force.z = gripper_mass*9.81
-
-  reset_ft_wrench_srv(ft_offset)
-
-
 #%%
 
 rospy.init_node('fr3_control', anonymous=True)
@@ -218,5 +195,8 @@ display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path
                                               queue_size=20)
 
 #%%
-# Service for resetting FT sensor bias
-reset_ft_wrench_srv = rospy.ServiceProxy('/bus0/ft_sensor0/reset_wrench', rokubimini_msgs.srv.ResetWrench())
+path = np.loadtxt('./static_solver_path.csv', dtype=np.float64, delimiter=',')
+xs = path[:,0]
+zs = path[:,1]
+phis = path[:,2]
+plan_cart_path(xs,zs,phis,execute=False)
