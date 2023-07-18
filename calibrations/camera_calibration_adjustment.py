@@ -127,25 +127,25 @@ plot_vis()
 adj_X = 0.0
 adj_Y = 0.0
 adj_Z = 0.0
-adj_R = 0.0
-adj_P = 0.0
+adj_Roll = 0.0
+adj_Pitch = 0.0
 adj_Yaw = 0.0
 T_adj = T_adj + np.array([[adj_X],[adj_Y],[adj_Z]])
-R_adj = R.from_euler('xyz', [adj_R, adj_P, adj_Yaw]).as_matrix()@R_adj
+R_adj = R.from_euler('xyz', [adj_Roll, adj_Pitch, adj_Yaw]).as_matrix()@R_adj
 E_base_adj = np.hstack([R_adj, T_adj]) 
 E_cam_adj = np.hstack([R_adj.T, -R_adj.T@T_adj])
 P_adj = K_cam@E_cam_adj
-print('X: ' + str(adj_X) + ' Y: ' + str(adj_Y) + ' Z: ' + str(adj_Z) + ' R: ' + str(adj_R) + ' P: ' + str(adj_P) + ' Yaw: ' + str(adj_Yaw))
+print('X: ' + str(adj_X) + ' Y: ' + str(adj_Y) + ' Z: ' + str(adj_Z) + ' R: ' + str(adj_Roll) + ' P: ' + str(adj_Pitch) + ' Yaw: ' + str(adj_Yaw))
 plot_vis()
 
 #%%
 # Save the original and adjusted calibrations
-np.savez(save_dir + 'TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam)
-np.savez(save_dir + './TFs_adj2.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam, T_adj=T_adj, R_adj=R_adj)
+np.savez(save_dir + 'TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam, T_cam=T_cam, R_cam=R_cam)
+np.savez(save_dir + './TFs_adj2.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam, T_cam=T_adj, R_cam=R_adj)
 
 # %%
 TFs_adj = np.load(save_dir + 'TFs_adj2.npz')
 P_adj = TFs_adj['P']
-T_adj = TFs_adj['T_adj']
-R_adj = TFs_adj['R_adj']
+T_adj = TFs_adj['T_cam']
+R_adj = TFs_adj['R_cam']
 # %%
