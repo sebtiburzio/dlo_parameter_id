@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_1407'
+calib_name = 'calib_2107'
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
@@ -107,17 +107,19 @@ P_adj = P
 #%%
 # Set up any marked points to compare
 marked_XYZ = np.array([
-                    #    [0.453,0.0,-0.03,1.0],
-                    #    [0.453,0.1485,-0.03,1.0],
-                    #    [0.453,-0.1505,-0.03,1.0],
-                    #    [0.153,0.4485,-0.03,1.0],
-                       [0.153,0.1485,0.0,1.0], # FR3 TERI base
-                       [0.153,-0.1505,0.0,1.0], # FR3 TERI base
+                       [0.154,0.149,0.0,1.0], # FR3 TERI base
+                       [0.154,-0.150,0.0,1.0], # FR3 TERI base
+                       [-0.238,0.149,0.0,1.0], # FR3 TERI base
+                       [-0.238,-0.149,0.0,1.0], # FR3 TERI base
+                       [0.154,0.149,-0.03,1.0], # FR3 TERI base
+                       [0.154,-0.150,-0.03,1.0], # FR3 TERI base
+                       [-0.238,0.149,-0.03,1.0], # FR3 TERI base
+                       [-0.238,-0.149,-0.03,1.0], # FR3 TERI base
                        [0.055,0.0,0.14,1.0], # FR3 link0 arrow
-                       [-0.011,-0.08,0.01,1.0], # FR3 bolt
-                       [-0.011,0.08,0.01,1.0], # FR3 bolt
-                       [0.0715,0.0,0.00135,1.0] # FR3 link0 front edge
-                    ]).T 
+                       [0.0715,0.0,0.00135,1.0], # FR3 link0 front edge
+                    #    [-0.011,-0.08,0.01,1.0], # FR3 bolt
+                    #    [-0.011,0.08,0.01,1.0], # FR3 bolt
+                    ]).T
 
 # Plot the visualistion of known geometry on the current calibration
 plot_vis()
@@ -141,11 +143,11 @@ plot_vis()
 #%%
 # Save the original and adjusted calibrations
 np.savez(save_dir + 'TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam, T_cam=T_cam, R_cam=R_cam)
-np.savez(save_dir + './TFs_adj2.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam, T_cam=T_adj, R_cam=R_adj)
+np.savez(save_dir + './TFs_adj.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam, T_cam=T_adj, R_cam=R_adj)
 
 # %%
-TFs_adj = np.load(save_dir + 'TFs_adj2.npz')
+TFs_adj = np.load(save_dir + 'TFs_adj.npz')
 P_adj = TFs_adj['P']
-T_adj = TFs_adj['T_cam']
-R_adj = TFs_adj['R_cam']
+T_adj = TFs_adj['T_adj']
+R_adj = TFs_adj['R_adj']
 # %%
