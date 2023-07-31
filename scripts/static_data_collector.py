@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import csv
 import copy
 import rospy
@@ -10,18 +11,19 @@ import geometry_msgs.msg
 import tf
 import cv2
 from cv_bridge import CvBridge
+from sensor_msgs.msg import CompressedImage
+from franka_msgs.msg import FrankaState
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from math import pi
 
-def callback(data):
-    rospy.loginfo("I heard %s",data.data)
 
 def move_home(joint1=0.0,joint6=0.9):
   move_group.go(joints=[joint1, -0.1, 0.0, -1.0, 0.0, joint6, 0], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
   move_group.stop()
 
+# TODO - plan then execute separately only seems to work for plan_to_cart
 def plan_to_quaternion(x,y,z, qx, qy, qz ,qw):
   pose_goal = geometry_msgs.msg.Pose()
   pose_goal.orientation.x = qx
@@ -76,7 +78,7 @@ def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   pose_goal.position.z = z
   waypoints.append(copy.deepcopy(pose_goal))
   (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
-  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.03,0.03)
+  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.05,0.05)
   if fraction == 1.0:
     return plan
   else:
@@ -102,9 +104,9 @@ if __name__ == '__main__':
 
         rospy.init_node('static_data_collector', anonymous=True)
 
-        # Check required topics are available - TODO
-        #wait_for_message("/camera/color/image_raw/compressed", topic_type, timeout=None)
-        #wait_for_message("/franka_state_controller/franka_states", topic_type, timeout=None)
+        # Check required topics are available
+        rospy.wait_for_message("/camera/color/image_raw/compressed", CompressedImage, timeout=None)
+        rospy.wait_for_message("/franka_state_controller/franka_states", FrankaState, timeout=None)
 
         print("============ Setting up moveit commander interface")
         # MoveIt Commander interface init
@@ -143,8 +145,9 @@ if __name__ == '__main__':
         base_Y = object_Y_plane - 0.0075
         mid_Y = object_Y_plane - 0.0075
         end_Y = object_Y_plane - 0.015
+        print("Assuming base at Y=" + str(base_Y))
         print("Assuming mid at Y=" + str(mid_Y))
-        print("Assuming end at Y=" + str(end_Y))
+        print("Assuming end at Y=" + str(end_Y) + '\n')
         base_offset = 0.0485
         
         # Load EE pt sequence
@@ -162,6 +165,7 @@ if __name__ == '__main__':
         Z_mid_meas = []
         X_end_meas = []
         Z_end_meas = []
+        os.makedirs('./images')
 
         for i in range(len(X_seq)):
             print("Planning to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
@@ -173,53 +177,56 @@ if __name__ == '__main__':
             input()
 
             # Read from topics
-            img_msg = rospy.wait_for_message("/camera/color/image_raw/compressed", TODO, timeout=None)
+            img_msg = rospy.wait_for_message("/camera/color/image_raw/compressed", CompressedImage, timeout=None)
             ts.append(img_msg.header.stamp) # Use image timestamp for all data
-            fr3_msg = rospy.wait_for_message("/franka_state_controller/franka_states", TODO, timeout=None)
+            fr3_msg = rospy.wait_for_message("/franka_state_controller/franka_states", FrankaState, timeout=None)
             # Process image
-            img = bridge.compressed_imgmsg_to_cv2(img_msg, desired_encoding="passthrough")
-            fig, ax = plt.subplots()
-            ax.imshow(img) # TODO - not sure this will just work
+            imgbgr = bridge.compressed_imgmsg_to_cv2(img_msg, desired_encoding="passthrough")
+            img = cv2.cvtColor(imgbgr, cv2.COLOR_BGR2RGB)
+            fig, ax = plt.subplots(figsize=(16, 12))
+            ax.imshow(img)
             plt.axis('off')
             print("Select marker points (base, mid, end) in the image; left click - add, right - remove, middle - finish")
             UVs = plt.ginput(n=-1, timeout=0)
             plt.close()
-            base_UV = [int(UVs[0,0]), int(UVs[0,1])]
-            mid_UV = [int(UVs[1,0]), int(UVs[1,1])]
-            end_UV = [int(UVs[2,0]), int(UVs[2,1])]
+            base_UV = [int(UVs[0][0]), int(UVs[0][1])]
+            mid_UV = [int(UVs[1][0]), int(UVs[1][1])]
+            end_UV = [int(UVs[2][0]), int(UVs[2][1])]
             base_XZ = UV_to_XZplane(base_UV[0], base_UV[1], base_Y)
             mid_XZ = UV_to_XZplane(mid_UV[0], mid_UV[1], mid_Y)
             end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
-            cv2.imwrite('./images/' + str(ts) + '.jpg', img)
+            cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
             # Process robot state/ end effector position data # TODO - maybe replace with Virtual EE from TF
-            RMat_EE = np.array([[fr3_msg.O_T_EE[:,0], fr3_msg.O_T_EE[:,1],fr3_msg.O_T_EE[:,2]],
-                                [fr3_msg.O_T_EE[:,4], fr3_msg.O_T_EE[:,5],fr3_msg.O_T_EE[:,6]],
-                                [fr3_msg.O_T_EE[:,8], fr3_msg.O_T_EE[:,9],fr3_msg.O_T_EE[:,10]]]).T
+            RMat_EE = np.array([[fr3_msg.O_T_EE[0], fr3_msg.O_T_EE[1],fr3_msg.O_T_EE[2]],
+                                [fr3_msg.O_T_EE[4], fr3_msg.O_T_EE[5],fr3_msg.O_T_EE[6]],
+                                [fr3_msg.O_T_EE[8], fr3_msg.O_T_EE[9],fr3_msg.O_T_EE[10]]]).T
             RPY_EE = R.from_matrix(RMat_EE).as_euler('xzy', degrees=False) # Extrinsic Roll, Yaw, Pitch parametrisation. x=pi, z=0, y=Phi
-            Phi_meas = RPY_EE[:,2]
-            X_meas = fr3_msg.O_T_EE[:,12] - base_offset*np.sin(Phi_meas)
-            Z_meas = fr3_msg.O_T_EE[:,14] - base_offset*np.cos(Phi_meas)
+            Phi = RPY_EE[2]
+            X_meas = fr3_msg.O_T_EE[12] - base_offset*np.sin(Phi)
+            Z_meas = fr3_msg.O_T_EE[14] - base_offset*np.cos(Phi)
+            print(Z_meas)
             # Overwrite base position with measured position if not in camera frame
-            # X_base_meas = X_meas # TODO - possible to automate this by clicking -ve pixel value?
-            # Z_base_meas = Z_meas
+            base_XZ[0] = X_meas # TODO - possible to automate this by clicking -ve pixel value?
+            base_XZ[2] = Z_meas
             # Save data
-            Phi_meas.append(Phi_meas)
-            X_base_meas.append(base_XZ[0])
-            Z_base_meas.append(base_XZ[2])
-            X_mid_meas.append(mid_XZ[0])
-            Z_mid_meas.append(mid_XZ[2])
-            X_end_meas.append(end_XZ[0])
-            Z_end_meas.append(end_XZ[2])
+            Phi_meas.append(Phi)
+            X_base_meas.append(base_XZ[0,0])
+            Z_base_meas.append(base_XZ[2,0])
+            X_mid_meas.append(mid_XZ[0,0])
+            Z_mid_meas.append(mid_XZ[2,0])
+            X_end_meas.append(end_XZ[0,0])
+            Z_end_meas.append(end_XZ[2,0])
             
             # Wait for input to move to next point
             print("Data saved, ready to return to home position")
-            plan = plan_to(0, object_Y_plane, 0.8, pi, 0, 0)
+            plan = plan_to_cart(0, object_Y_plane, 0.7, pi, 0, 0)
             input()
             execute_plan(plan)
-            print("Ready to continue to next point")
-            input()
 
         print("Sequence complete")
+        print(Phi_meas)
+        print(X_base_meas)
+        print(X_mid_meas)
 
         # Write data to csv
         with open('./sequence_results.csv', 'w', newline='') as csvfile:
