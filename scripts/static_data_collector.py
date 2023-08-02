@@ -85,18 +85,28 @@ def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
     print("ERROR: planning failed at %d of trajectory", fraction)
 
 def execute_plan(plan):
-    move_group.execute(plan, wait=True)
-    move_group.stop()
-    move_group.clear_pose_targets()
-    plan = None
+  move_group.execute(plan, wait=True)
+  move_group.stop()
+  move_group.clear_pose_targets()
+  plan = None
 
 # Pixel to 3D conversions
 def UV_to_XZplane(u,v,Y=0):
-    rhs1 = np.hstack([P[:,:3],np.array([[-u,-v,-1]]).T])
-    rhs1 = np.vstack([rhs1, np.array([0,1,0,0])])   # Intersect y=Y plane
-    rhs2 = np.reshape(np.hstack([-P[:,3],[Y]]),(4,1))
-    sol = np.linalg.inv(rhs1)@rhs2
-    return sol[:3]
+  rhs1 = np.hstack([P[:,:3],np.array([[-u,-v,-1]]).T])
+  rhs1 = np.vstack([rhs1, np.array([0,1,0,0])])   # Intersect y=Y plane
+  rhs2 = np.reshape(np.hstack([-P[:,3],[Y]]),(4,1))
+  sol = np.linalg.inv(rhs1)@rhs2
+  return sol[:3]
+
+def write_csv():
+  # Write data to csv
+  with open('./sequence_results.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile, delimiter=',')
+    writer.writerow(['ts', 'Phi', 'X_base_meas', 'Z_base_meas', 'Phi_meas', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas'])
+    for n in range(len(ts)):
+      writer.writerow([ts[n], Phi_meas[n], X_base_meas[n], Z_base_meas[n], 
+                        X_mid_meas[n], Z_mid_meas[n], 
+                        X_end_meas[n], Z_end_meas[n]])
 
 
 if __name__ == '__main__':
@@ -105,7 +115,9 @@ if __name__ == '__main__':
         rospy.init_node('static_data_collector', anonymous=True)
 
         # Check required topics are available
+        print("Waiting for camera")
         rospy.wait_for_message("/camera/color/image_raw/compressed", CompressedImage, timeout=None)
+        print("Waiting for robot")
         rospy.wait_for_message("/franka_state_controller/franka_states", FrankaState, timeout=None)
 
         print("============ Setting up moveit commander interface")
@@ -141,17 +153,17 @@ if __name__ == '__main__':
             K_cam = tfs['K_cam']
 
         # Other setup
-        object_Y_plane = -0.2 # Y coordinate of object plane
-        base_Y = object_Y_plane - 0.0075
+        object_Y_plane = -0.25 # Y coordinate of object plane
+        base_Y = object_Y_plane - 0.015
         mid_Y = object_Y_plane - 0.0075
-        end_Y = object_Y_plane - 0.015
+        end_Y = object_Y_plane - 0.0125
         print("Assuming base at Y=" + str(base_Y))
         print("Assuming mid at Y=" + str(mid_Y))
         print("Assuming end at Y=" + str(end_Y) + '\n')
-        base_offset = 0.0485
+        base_offset = 0.0115
         
         # Load EE pt sequence
-        sequence = np.loadtxt('./sequence.csv', dtype=np.float64, delimiter=',')
+        sequence = np.loadtxt('../sequence.csv', dtype=np.float64, delimiter=',')
         X_seq = sequence[:,0]
         Z_seq = sequence[:,1]
         Phi_seq = sequence[:,2]
@@ -204,10 +216,9 @@ if __name__ == '__main__':
             Phi = RPY_EE[2]
             X_meas = fr3_msg.O_T_EE[12] - base_offset*np.sin(Phi)
             Z_meas = fr3_msg.O_T_EE[14] - base_offset*np.cos(Phi)
-            print(Z_meas)
-            # Overwrite base position with measured position if not in camera frame
-            base_XZ[0] = X_meas # TODO - possible to automate this by clicking -ve pixel value?
-            base_XZ[2] = Z_meas
+            # # Overwrite base position with measured position if not in camera frame
+            # base_XZ[0] = X_meas
+            # base_XZ[2] = Z_meas
             # Save data
             Phi_meas.append(Phi)
             X_base_meas.append(base_XZ[0,0])
@@ -219,7 +230,7 @@ if __name__ == '__main__':
             
             # Wait for input to move to next point
             print("Data saved, ready to return to home position")
-            plan = plan_to_cart(0, object_Y_plane, 0.7, pi, 0, 0)
+            plan = plan_to_cart(0, object_Y_plane, 0.78, pi, 0, 0)
             input()
             execute_plan(plan)
 
@@ -228,16 +239,14 @@ if __name__ == '__main__':
         print(X_base_meas)
         print(X_mid_meas)
 
-        # Write data to csv
-        with open('./sequence_results.csv', 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',')
-            writer.writerow(['ts', 'Phi', 'X_base_meas', 'Z_base_meas', 'Phi_meas', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas'])
-            for n in range(len(ts)):
-                writer.writerow([ts[n], Phi_meas[n], X_base_meas[n], Z_base_meas[n], 
-                                 X_mid_meas[n], Z_mid_meas[n], 
-                                 X_end_meas[n], Z_end_meas[n]])
+        write_csv()
 
+    except EOFError:
+      write_csv()
+      exit()
     except rospy.ROSInterruptException:
-       exit()
+      write_csv()
+      exit()
     except KeyboardInterrupt:
+      write_csv()
       exit()

@@ -70,7 +70,7 @@ def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   pose_goal.position.z = z
   waypoints.append(copy.deepcopy(pose_goal))
   (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
-  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.03,0.03)
+  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.05,0.05)
   if fraction == 1.0:
     return plan
   else:

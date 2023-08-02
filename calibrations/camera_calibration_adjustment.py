@@ -27,18 +27,18 @@ def plot_vis():
     ax.scatter(EE_UV[0],EE_UV[1],s=15,c='red',zorder=2.5)
     ax.scatter(marked_UV[0,:],marked_UV[1,:],s=5,c='yellow',zorder=2.5)
 
-    # Z-plane grid
-    grid_btm = P_adj@np.array([np.linspace(-0.2,0.2,5).T,-0.2*np.ones(5),np.zeros(5),np.ones(5)])
-    grid_btm = grid_btm/grid_btm[2,:].reshape(1,-1)
-    grid_top = P_adj@np.array([np.linspace(-0.2,0.2,5).T,0.2*np.ones(5),np.zeros(5),np.ones(5)])
-    grid_top = grid_top/grid_top[2,:].reshape(1,-1)
-    grid_left = P_adj@np.array([-0.2*np.ones(5),np.linspace(-0.2,0.2,5).T,np.zeros(5),np.ones(5)])
-    grid_left = grid_left/grid_left[2,:].reshape(1,-1)
-    grid_right = P_adj@np.array([0.2*np.ones(5),np.linspace(-0.2,0.2,5).T,np.zeros(5),np.ones(5)])
-    grid_right = grid_right/grid_right[2,:].reshape(1,-1)
-    for i in range(5):
-        ax.plot([grid_btm[0,i],grid_top[0,i]],[grid_btm[1,i],grid_top[1,i]],lw=1,c='aqua')
-        ax.plot([grid_left[0,i],grid_right[0,i]],[grid_left[1,i],grid_right[1,i]],lw=1,c='aqua')
+    # # Z-plane grid
+    # grid_btm = P_adj@np.array([np.linspace(-0.2,0.2,5).T,-0.2*np.ones(5),np.zeros(5),np.ones(5)])
+    # grid_btm = grid_btm/grid_btm[2,:].reshape(1,-1)
+    # grid_top = P_adj@np.array([np.linspace(-0.2,0.2,5).T,0.2*np.ones(5),np.zeros(5),np.ones(5)])
+    # grid_top = grid_top/grid_top[2,:].reshape(1,-1)
+    # grid_left = P_adj@np.array([-0.2*np.ones(5),np.linspace(-0.2,0.2,5).T,np.zeros(5),np.ones(5)])
+    # grid_left = grid_left/grid_left[2,:].reshape(1,-1)
+    # grid_right = P_adj@np.array([0.2*np.ones(5),np.linspace(-0.2,0.2,5).T,np.zeros(5),np.ones(5)])
+    # grid_right = grid_right/grid_right[2,:].reshape(1,-1)
+    # for i in range(5):
+    #     ax.plot([grid_btm[0,i],grid_top[0,i]],[grid_btm[1,i],grid_top[1,i]],lw=1,c='aqua')
+    #     ax.plot([grid_left[0,i],grid_right[0,i]],[grid_left[1,i],grid_right[1,i]],lw=1,c='aqua')
     # Y-plane grid
     grid_btm = P_adj@np.array([np.linspace(0,1.0,11).T,np.zeros(11),np.zeros(11),np.ones(11)])
     grid_btm = grid_btm/grid_btm[2,:].reshape(1,-1)
@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_2107'
+calib_name = 'calib_0208'
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
@@ -117,8 +117,6 @@ marked_XYZ = np.array([
                        [-0.238,-0.149,-0.03,1.0], # FR3 TERI base
                        [0.055,0.0,0.14,1.0], # FR3 link0 arrow
                        [0.0715,0.0,0.00135,1.0], # FR3 link0 front edge
-                    #    [-0.011,-0.08,0.01,1.0], # FR3 bolt
-                    #    [-0.011,0.08,0.01,1.0], # FR3 bolt
                     ]).T
 
 # Plot the visualistion of known geometry on the current calibration
@@ -126,12 +124,12 @@ plot_vis()
 
 #%%
 # Adjust the extrinsic calibration
-adj_X = 0.0
+adj_X = 0.005
 adj_Y = 0.0
 adj_Z = 0.0
 adj_Roll = 0.0
 adj_Pitch = 0.0
-adj_Yaw = 0.0
+adj_Yaw = 0.00
 T_adj = T_adj + np.array([[adj_X],[adj_Y],[adj_Z]])
 R_adj = R.from_euler('xyz', [adj_Roll, adj_Pitch, adj_Yaw]).as_matrix()@R_adj
 E_base_adj = np.hstack([R_adj, T_adj]) 
