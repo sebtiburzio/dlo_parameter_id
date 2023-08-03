@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_0208'
+calib_name = 'calib_0308'
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
@@ -129,7 +129,7 @@ adj_Y = 0.0
 adj_Z = 0.0
 adj_Roll = 0.0
 adj_Pitch = 0.0
-adj_Yaw = 0.00
+adj_Yaw = 0.0
 T_adj = T_adj + np.array([[adj_X],[adj_Y],[adj_Z]])
 R_adj = R.from_euler('xyz', [adj_Roll, adj_Pitch, adj_Yaw]).as_matrix()@R_adj
 E_base_adj = np.hstack([R_adj, T_adj]) 
