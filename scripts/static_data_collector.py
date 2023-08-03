@@ -102,11 +102,15 @@ def write_csv():
   # Write data to csv
   with open('./sequence_results.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['ts', 'Phi', 'X_base_meas', 'Z_base_meas', 'Phi_meas', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas'])
+    writer.writerow(['ts', 'X_EE', 'Z_EE', 'Phi', 'X_base_meas', 'Z_base_meas', 'Phi_EE', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas', 'U_base', 'V_base', 'U_mid', 'V_mid', 'U_end', 'V_end'])
     for n in range(len(ts)):
-      writer.writerow([ts[n], Phi_meas[n], X_base_meas[n], Z_base_meas[n], 
+      writer.writerow([ts[n], X_EE[n], Z_EE[n], Phi_EE[n], 
+                        X_base_meas[n], Z_base_meas[n], 
                         X_mid_meas[n], Z_mid_meas[n], 
-                        X_end_meas[n], Z_end_meas[n]])
+                        X_end_meas[n], Z_end_meas[n],
+                        U_base[n], V_base[n], 
+                        U_mid[n], V_mid[n], 
+                        U_end[n], V_end[n]])
 
 
 if __name__ == '__main__':
@@ -143,6 +147,7 @@ if __name__ == '__main__':
                                                     moveit_msgs.msg.DisplayTrajectory,
                                                     queue_size=20)
         
+        tflistener = tf.TransformListener()
         bridge = CvBridge()
 
         # Camera intrinsic and extrinsic transforms
@@ -154,30 +159,44 @@ if __name__ == '__main__':
 
         # Other setup
         object_Y_plane = -0.25 # Y coordinate of object plane
-        base_Y = object_Y_plane - 0.015
-        mid_Y = object_Y_plane - 0.0075
-        end_Y = object_Y_plane - 0.0125
+        base_Y = object_Y_plane - 0.01
+        mid_Y = object_Y_plane - 0.01
+        end_Y = object_Y_plane - 0.015
         print("Assuming base at Y=" + str(base_Y))
         print("Assuming mid at Y=" + str(mid_Y))
         print("Assuming end at Y=" + str(end_Y) + '\n')
-        base_offset = 0.0115
+        # base_offset = 0.0115
         
         # Load EE pt sequence
-        sequence = np.loadtxt('../sequence.csv', dtype=np.float64, delimiter=',')
+        sequence = np.loadtxt('./sequence.csv', dtype=np.float64, delimiter=',')
         X_seq = sequence[:,0]
         Z_seq = sequence[:,1]
         Phi_seq = sequence[:,2]
 
         # Data to save
         ts = []
+        X_EE = []
+        Z_EE = []
+        Phi_EE = []
         X_base_meas = []
         Z_base_meas = []
-        Phi_meas = []
         X_mid_meas = []
         Z_mid_meas = []
         X_end_meas = []
         Z_end_meas = []
+        U_base = []
+        V_base = []
+        U_mid = []
+        V_mid = []
+        U_end = []
+        V_end = []
         os.makedirs('./images')
+
+        # Start at home position
+        plan = plan_to_cart(0, object_Y_plane, 0.78, pi, 0, 0)
+        print("Ready to move to home position")
+        input()
+        execute_plan(plan)
 
         for i in range(len(X_seq)):
             print("Planning to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
@@ -208,34 +227,44 @@ if __name__ == '__main__':
             mid_XZ = UV_to_XZplane(mid_UV[0], mid_UV[1], mid_Y)
             end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
             cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
+
             # Process robot state/ end effector position data # TODO - maybe replace with Virtual EE from TF
-            RMat_EE = np.array([[fr3_msg.O_T_EE[0], fr3_msg.O_T_EE[1],fr3_msg.O_T_EE[2]],
-                                [fr3_msg.O_T_EE[4], fr3_msg.O_T_EE[5],fr3_msg.O_T_EE[6]],
-                                [fr3_msg.O_T_EE[8], fr3_msg.O_T_EE[9],fr3_msg.O_T_EE[10]]]).T
-            RPY_EE = R.from_matrix(RMat_EE).as_euler('xzy', degrees=False) # Extrinsic Roll, Yaw, Pitch parametrisation. x=pi, z=0, y=Phi
-            Phi = RPY_EE[2]
-            X_meas = fr3_msg.O_T_EE[12] - base_offset*np.sin(Phi)
-            Z_meas = fr3_msg.O_T_EE[14] - base_offset*np.cos(Phi)
-            # # Overwrite base position with measured position if not in camera frame
-            # base_XZ[0] = X_meas
-            # base_XZ[2] = Z_meas
+            (trans,rot) = tflistener.lookupTransform('/fr3_link0', '/fr3_virtual_EE_link', rospy.Time(0))
+            angs = tf.transformations.euler_from_quaternion(rot, axes='sxzy')
+
+            # RMat_EE = np.array([[fr3_msg.O_T_EE[0], fr3_msg.O_T_EE[1],fr3_msg.O_T_EE[2]],
+            #                     [fr3_msg.O_T_EE[4], fr3_msg.O_T_EE[5],fr3_msg.O_T_EE[6]],
+            #                     [fr3_msg.O_T_EE[8], fr3_msg.O_T_EE[9],fr3_msg.O_T_EE[10]]]).T
+            # RPY_EE = R.from_matrix(RMat_EE).as_euler('xzy', degrees=False) # Extrinsic Roll, Yaw, Pitch parametrisation. x=pi, z=0, y=Phi
+            # Phi_EE = RPY_EE[2]
+            # X_EE = fr3_msg.O_T_EE[12] - base_offset*np.sin(Phi)
+            # Z_EE = fr3_msg.O_T_EE[14] - base_offset*np.cos(Phi)
+
             # Save data
-            Phi_meas.append(Phi)
+            X_EE.append(trans[0])
+            Z_EE.append(trans[2])
+            Phi_EE.append(angs[2])
             X_base_meas.append(base_XZ[0,0])
             Z_base_meas.append(base_XZ[2,0])
             X_mid_meas.append(mid_XZ[0,0])
             Z_mid_meas.append(mid_XZ[2,0])
             X_end_meas.append(end_XZ[0,0])
             Z_end_meas.append(end_XZ[2,0])
+            U_base.append(base_UV[0])
+            V_base.append(base_UV[1])
+            U_mid.append(mid_UV[0])
+            V_mid.append(mid_UV[1])
+            U_end.append(end_UV[0])
+            V_end.append(end_UV[1])
             
             # Wait for input to move to next point
-            print("Data saved, ready to return to home position")
             plan = plan_to_cart(0, object_Y_plane, 0.78, pi, 0, 0)
+            print("Data saved, ready to return to home position")
             input()
             execute_plan(plan)
 
         print("Sequence complete")
-        print(Phi_meas)
+        print(Phi_EE)
         print(X_base_meas)
         print(X_mid_meas)
 
