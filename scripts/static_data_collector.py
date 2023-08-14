@@ -19,8 +19,8 @@ from scipy.spatial.transform import Rotation as R
 from math import pi
 
 
-def move_home(joint1=0.0,joint6=0.9):
-  move_group.go(joints=[joint1, -0.1, 0.0, -1.0, 0.0, joint6, 0], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
+def move_home(joint1=0.0,joint6=1.1):
+  move_group.go(joints=[joint1, -0.8, 0.0, -1.9, 0.0, joint6, -pi/2], wait=True)
   move_group.stop()
 
 # TODO - plan then execute separately only seems to work for plan_to_cart
@@ -78,7 +78,7 @@ def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   pose_goal.position.z = z
   waypoints.append(copy.deepcopy(pose_goal))
   (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
-  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.05,0.05)
+  plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.1,0.1)
   if fraction == 1.0:
     return plan
   else:
@@ -102,7 +102,7 @@ def write_csv():
   # Write data to csv
   with open('./sequence_results.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['ts', 'X_EE', 'Z_EE', 'Phi', 'X_base_meas', 'Z_base_meas', 'Phi_EE', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas', 'U_base', 'V_base', 'U_mid', 'V_mid', 'U_end', 'V_end'])
+    writer.writerow(['ts', 'X_EE', 'Z_EE', 'Phi', 'X_base_meas', 'Z_base_meas', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas', 'U_base', 'V_base', 'U_mid', 'V_mid', 'U_end', 'V_end'])
     for n in range(len(ts)):
       writer.writerow([ts[n], X_EE[n], Z_EE[n], Phi_EE[n], 
                         X_base_meas[n], Z_base_meas[n], 
@@ -158,7 +158,8 @@ if __name__ == '__main__':
             K_cam = tfs['K_cam']
 
         # Other setup
-        object_Y_plane = -0.25 # Y coordinate of object plane
+        home_height = 0.65
+        object_Y_plane = -0.2 # Y coordinate of object plane
         base_Y = object_Y_plane - 0.01
         mid_Y = object_Y_plane - 0.01
         end_Y = object_Y_plane - 0.015
@@ -193,10 +194,11 @@ if __name__ == '__main__':
         os.makedirs('./images')
 
         # Start at home position
-        plan = plan_to_cart(0, object_Y_plane, 0.78, pi, 0, 0)
-        print("Ready to move to home position")
-        input()
-        execute_plan(plan)
+        # plan = plan_to_cart(-0.3, object_Y_plane, home_height, pi, 0, 0)
+        # print("Ready to move to home position")
+        # input()
+        # execute_plan(plan)
+        move_home(joint1=-pi/4)
 
         for i in range(len(X_seq)):
             print("Planning to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
@@ -257,11 +259,12 @@ if __name__ == '__main__':
             U_end.append(end_UV[0])
             V_end.append(end_UV[1])
             
-            # Wait for input to move to next point
-            plan = plan_to_cart(0, object_Y_plane, 0.78, pi, 0, 0)
-            print("Data saved, ready to return to home position")
-            input()
-            execute_plan(plan)
+            # # Move back to vertical in between points to avoid hysteresis
+            # plan = plan_to_cart(trans[0], object_Y_plane, home_height, pi, 0, 0)
+            # print("Data saved, ready to straighten")
+            # input()
+            # execute_plan(plan)
+            move_home(joint1=-pi/4)
 
         print("Sequence complete")
         print(Phi_EE)

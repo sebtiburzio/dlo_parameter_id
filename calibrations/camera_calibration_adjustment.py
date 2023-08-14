@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_0308'
+calib_name = 'calib_1408'
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
@@ -124,7 +124,7 @@ plot_vis()
 
 #%%
 # Adjust the extrinsic calibration
-adj_X = 0.005
+adj_X = 0.0
 adj_Y = 0.0
 adj_Z = 0.0
 adj_Roll = 0.0
@@ -146,6 +146,6 @@ np.savez(save_dir + './TFs_adj.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj
 # %%
 TFs_adj = np.load(save_dir + 'TFs_adj.npz')
 P_adj = TFs_adj['P']
-T_adj = TFs_adj['T_adj']
-R_adj = TFs_adj['R_adj']
+T_adj = TFs_adj['T_cam']
+R_adj = TFs_adj['R_cam']
 # %%
