@@ -20,6 +20,12 @@ from math import pi
 
 
 def move_home(joint1=0.0,joint6=1.1):
+  if joint1 > 0.0:
+    joint1 = 0.0
+    print("Clamping joint1 below 0.0 rad")
+  elif joint1 < -2.5:
+    joint1 = -2.5
+    print("Clamping joint1 above -2.5 rad")
   move_group.go(joints=[joint1, -0.8, 0.0, -1.9, 0.0, joint6, -pi/2], wait=True)
   move_group.stop()
 
@@ -77,7 +83,7 @@ def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   pose_goal.position.y = y
   pose_goal.position.z = z
   waypoints.append(copy.deepcopy(pose_goal))
-  (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0) # jump_threshold - TODO check if should change
+  (plan, fraction) = move_group.compute_cartesian_path(waypoints, 0.01, 0.0)
   plan = move_group.retime_trajectory(move_group.get_current_state(),plan,0.1,0.1)
   if fraction == 1.0:
     return plan
@@ -158,15 +164,13 @@ if __name__ == '__main__':
             K_cam = tfs['K_cam']
 
         # Other setup
-        home_height = 0.65
-        object_Y_plane = -0.2 # Y coordinate of object plane
+        object_Y_plane = -0.2 # Y coordinate of object plane, parallel to XZ plane
         base_Y = object_Y_plane - 0.01
         mid_Y = object_Y_plane - 0.01
         end_Y = object_Y_plane - 0.015
         print("Assuming base at Y=" + str(base_Y))
         print("Assuming mid at Y=" + str(mid_Y))
         print("Assuming end at Y=" + str(end_Y) + '\n')
-        # base_offset = 0.0115
         
         # Load EE pt sequence
         sequence = np.loadtxt('./sequence.csv', dtype=np.float64, delimiter=',')
@@ -193,14 +197,14 @@ if __name__ == '__main__':
         V_end = []
         os.makedirs('./images')
 
-        # Start at home position
-        # plan = plan_to_cart(-0.3, object_Y_plane, home_height, pi, 0, 0)
-        # print("Ready to move to home position")
-        # input()
-        # execute_plan(plan)
-        move_home(joint1=-pi/4)
-
         for i in range(len(X_seq)):
+            
+            # Move to better position for planning to highly angled poses
+            if X_seq[i] < 0:
+              move_home(joint1=-2)
+            else:
+              move_home(joint1=-1.15)
+
             print("Planning to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
             plan = plan_to_cart(X_seq[i], object_Y_plane, Z_seq[i], pi, 0, Phi_seq[i])
             print("Ready to move to point")
@@ -230,17 +234,9 @@ if __name__ == '__main__':
             end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
             cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
 
-            # Process robot state/ end effector position data # TODO - maybe replace with Virtual EE from TF
+            # Process robot state/ end effector position data
             (trans,rot) = tflistener.lookupTransform('/fr3_link0', '/fr3_virtual_EE_link', rospy.Time(0))
             angs = tf.transformations.euler_from_quaternion(rot, axes='sxzy')
-
-            # RMat_EE = np.array([[fr3_msg.O_T_EE[0], fr3_msg.O_T_EE[1],fr3_msg.O_T_EE[2]],
-            #                     [fr3_msg.O_T_EE[4], fr3_msg.O_T_EE[5],fr3_msg.O_T_EE[6]],
-            #                     [fr3_msg.O_T_EE[8], fr3_msg.O_T_EE[9],fr3_msg.O_T_EE[10]]]).T
-            # RPY_EE = R.from_matrix(RMat_EE).as_euler('xzy', degrees=False) # Extrinsic Roll, Yaw, Pitch parametrisation. x=pi, z=0, y=Phi
-            # Phi_EE = RPY_EE[2]
-            # X_EE = fr3_msg.O_T_EE[12] - base_offset*np.sin(Phi)
-            # Z_EE = fr3_msg.O_T_EE[14] - base_offset*np.cos(Phi)
 
             # Save data
             X_EE.append(trans[0])
@@ -259,14 +255,11 @@ if __name__ == '__main__':
             U_end.append(end_UV[0])
             V_end.append(end_UV[1])
             
-            # # Move back to vertical in between points to avoid hysteresis
-            # plan = plan_to_cart(trans[0], object_Y_plane, home_height, pi, 0, 0)
-            # print("Data saved, ready to straighten")
-            # input()
-            # execute_plan(plan)
-            move_home(joint1=-pi/4)
+            print("Data saved, ready to straighten")
+            input()
 
         print("Sequence complete")
+        move_home(joint1=-pi/2)
         print(Phi_EE)
         print(X_base_meas)
         print(X_mid_meas)

@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_1408'
+calib_name = 'calib_1508'
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
