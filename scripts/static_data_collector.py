@@ -108,7 +108,18 @@ def write_csv():
   # Write data to csv
   with open('./sequence_results.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['ts', 'X_EE', 'Z_EE', 'Phi', 'X_base_meas', 'Z_base_meas', 'X_mid_meas', 'Z_mid_meas', 'X_end_meas', 'Z_end_meas', 'U_base', 'V_base', 'U_mid', 'V_mid', 'U_end', 'V_end'])
+    writer.writerow(['ts', 'X_EE', 'Z_EE', 'Phi', 
+                      'X_base_meas', 'Z_base_meas', 
+                      'X_mid_meas', 'Z_mid_meas', 
+                      'X_end_meas', 'Z_end_meas', 
+                      'U_base', 'V_base', 
+                      'U_mid', 'V_mid', 
+                      'U_end', 'V_end', 
+                      'Base_angle', 
+                      'X_ang_start', 'Z_ang_start', 
+                      'X_ang_end', 'Z_ang_end', 
+                      'U_ang_start', 'V_ang_start', 
+                      'U_ang_end', 'V_ang_end'])
     for n in range(len(ts)):
       writer.writerow([ts[n], X_EE[n], Z_EE[n], Phi_EE[n], 
                         X_base_meas[n], Z_base_meas[n], 
@@ -116,7 +127,12 @@ def write_csv():
                         X_end_meas[n], Z_end_meas[n],
                         U_base[n], V_base[n], 
                         U_mid[n], V_mid[n], 
-                        U_end[n], V_end[n]])
+                        U_end[n], V_end[n],
+                        Base_angle[n], 
+                        X_ang_start[n], Z_ang_start[n], 
+                        X_ang_end[n], Z_ang_end[n],
+                        U_ang_start[n], V_ang_start[n], 
+                        U_ang_end[n], V_ang_end[n]])
 
 
 if __name__ == '__main__':
@@ -195,6 +211,15 @@ if __name__ == '__main__':
         V_mid = []
         U_end = []
         V_end = []
+        U_ang_start = []
+        V_ang_start = []
+        U_ang_end = []
+        V_ang_end = []
+        X_ang_start = []
+        Z_ang_start = []
+        X_ang_end = []
+        Z_ang_end = []
+        Base_angle = []
         os.makedirs('./images')
 
         for i in range(len(X_seq)):
@@ -232,6 +257,18 @@ if __name__ == '__main__':
             base_XZ = UV_to_XZplane(base_UV[0], base_UV[1], base_Y)
             mid_XZ = UV_to_XZplane(mid_UV[0], mid_UV[1], mid_Y)
             end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
+            if len(UVs) > 3:
+              base_ang_start_UV = [int(UVs[3][0]), int(UVs[3][1])]
+              base_ang_end_UV = [int(UVs[4][0]), int(UVs[4][1])]
+              base_ang_start_XZ = UV_to_XZplane(base_ang_start_UV[0], base_ang_start_UV[1], end_Y)
+              base_ang_end_XZ = UV_to_XZplane(base_ang_end_UV[0], base_ang_end_UV[1], end_Y)
+              base_ang = np.arctan2(-(base_ang_end_XZ[0]-base_ang_start_XZ[0]),-(base_ang_end_XZ[2]-base_ang_start_XZ[2])) # atan2(-delX,-delZ) because of robot axis shenanigans
+            else:
+              base_ang_start_UV = [0,0]
+              base_ang_end_UV = [0,0]
+              base_ang_start_XZ = [0.0,0.0,0.0]
+              base_ang_end_XZ = [0.0,0.0,0.0]
+              base_ang = 0.0
             cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
 
             # Process robot state/ end effector position data
@@ -254,15 +291,21 @@ if __name__ == '__main__':
             V_mid.append(mid_UV[1])
             U_end.append(end_UV[0])
             V_end.append(end_UV[1])
+            U_ang_start.append(base_ang_start_UV[0])
+            V_ang_start.append(base_ang_start_UV[1])
+            U_ang_end.append(base_ang_end_UV[0])
+            V_ang_end.append(base_ang_end_UV[1])
+            X_ang_start.append(base_ang_start_XZ[0,0])
+            Z_ang_start.append(base_ang_start_XZ[2,0])
+            X_ang_end.append(base_ang_end_XZ[0,0])
+            Z_ang_end.append(base_ang_end_XZ[2,0])
+            Base_angle.append(base_ang)
             
             print("Data saved, ready to straighten")
             input()
 
         print("Sequence complete")
         move_home(joint1=-pi/2)
-        print(Phi_EE)
-        print(X_base_meas)
-        print(X_mid_meas)
 
         write_csv()
 

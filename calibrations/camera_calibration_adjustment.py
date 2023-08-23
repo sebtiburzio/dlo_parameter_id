@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_1508'
+calib_name = 'calib_1508' # The calibration data format is backwards compared to the data collection data format :[
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
