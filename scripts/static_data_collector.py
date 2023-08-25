@@ -29,48 +29,6 @@ def move_home(joint1=0.0,joint6=1.1):
   move_group.go(joints=[joint1, -0.8, 0.0, -1.9, 0.0, joint6, -pi/2], wait=True)
   move_group.stop()
 
-# TODO - plan then execute separately only seems to work for plan_to_cart
-def plan_to_quaternion(x,y,z, qx, qy, qz ,qw):
-  pose_goal = geometry_msgs.msg.Pose()
-  pose_goal.orientation.x = qx
-  pose_goal.orientation.y = qy
-  pose_goal.orientation.z = qz
-  pose_goal.orientation.w = qw
-  pose_goal.position.x = x
-  pose_goal.position.y = y
-  pose_goal.position.z = z
-  move_group.set_pose_target(pose_goal)
-  plan = move_group.plan()
-  return plan
-
-def plan_to_extr_XZY(x,y,z, X, Z, Y):
-  pose_goal = geometry_msgs.msg.Pose()
-  quat = tf.transformations.quaternion_from_euler(X, Z, Y, 'sxzy')
-  pose_goal.orientation.x = quat[0]
-  pose_goal.orientation.y = quat[1]
-  pose_goal.orientation.z = quat[2]
-  pose_goal.orientation.w = quat[3]
-  pose_goal.position.x = x
-  pose_goal.position.y = y
-  pose_goal.position.z = z
-  move_group.set_pose_target(pose_goal)
-  plan = move_group.plan()
-  return plan
-
-def plan_to(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
-  pose_goal = geometry_msgs.msg.Pose()
-  quat = tf.transformations.quaternion_from_euler(a1, a2, a3, r + ax1 + ax2 + ax3)
-  pose_goal.orientation.x = quat[0]
-  pose_goal.orientation.y = quat[1]
-  pose_goal.orientation.z = quat[2]
-  pose_goal.orientation.w = quat[3]
-  pose_goal.position.x = x
-  pose_goal.position.y = y
-  pose_goal.position.z = z
-  move_group.set_pose_target(pose_goal)
-  plan = move_group.plan()
-  return plan
-
 def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
   waypoints = []
   pose_goal = geometry_msgs.msg.Pose()
@@ -96,43 +54,13 @@ def execute_plan(plan):
   move_group.clear_pose_targets()
   plan = None
 
-# Pixel to 3D conversions
-def UV_to_XZplane(u,v,Y=0):
-  rhs1 = np.hstack([P[:,:3],np.array([[-u,-v,-1]]).T])
-  rhs1 = np.vstack([rhs1, np.array([0,1,0,0])])   # Intersect y=Y plane
-  rhs2 = np.reshape(np.hstack([-P[:,3],[Y]]),(4,1))
-  sol = np.linalg.inv(rhs1)@rhs2
-  return sol[:3]
-
 def write_csv():
   # Write data to csv
   with open('./sequence_results.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['ts', 'X_EE', 'Z_EE', 'Phi', 
-                      'X_base_meas', 'Z_base_meas', 
-                      'X_mid_meas', 'Z_mid_meas', 
-                      'X_end_meas', 'Z_end_meas', 
-                      'U_base', 'V_base', 
-                      'U_mid', 'V_mid', 
-                      'U_end', 'V_end', 
-                      'Base_angle', 
-                      'X_ang_start', 'Z_ang_start', 
-                      'X_ang_end', 'Z_ang_end', 
-                      'U_ang_start', 'V_ang_start', 
-                      'U_ang_end', 'V_ang_end'])
+    writer.writerow(['ts', 'X_EE', 'Y_EE', 'Z_EE', 'Phi', 'Goal_X', 'Goal_Z', 'Endpt_Sol_X', 'Endpt_Sol_Z'])
     for n in range(len(ts)):
-      writer.writerow([ts[n], X_EE[n], Z_EE[n], Phi_EE[n], 
-                        X_base_meas[n], Z_base_meas[n], 
-                        X_mid_meas[n], Z_mid_meas[n], 
-                        X_end_meas[n], Z_end_meas[n],
-                        U_base[n], V_base[n], 
-                        U_mid[n], V_mid[n], 
-                        U_end[n], V_end[n],
-                        Base_angle[n], 
-                        X_ang_start[n], Z_ang_start[n], 
-                        X_ang_end[n], Z_ang_end[n],
-                        U_ang_start[n], V_ang_start[n], 
-                        U_ang_end[n], V_ang_end[n]])
+      writer.writerow([ts[n], X_EE[n], Y_EE[n], Z_EE[n], Phi_EE[n], Goal_X[n], Goal_Z[n], Endpt_Sol_X[n], Endpt_Sol_Z[n]])
 
 
 if __name__ == '__main__':
@@ -172,54 +100,29 @@ if __name__ == '__main__':
         tflistener = tf.TransformListener()
         bridge = CvBridge()
 
-        # Camera intrinsic and extrinsic transforms
-        with np.load('../TFs_adj.npz') as tfs:
-            P = tfs['P']
-            E_base = tfs['E_base']
-            E_cam = tfs['E_cam']
-            K_cam = tfs['K_cam']
-
         # Other setup
         object_Y_plane = -0.2 # Y coordinate of object plane, parallel to XZ plane
-        base_Y = object_Y_plane - 0.01
-        mid_Y = object_Y_plane - 0.01
-        end_Y = object_Y_plane - 0.015
-        print("Assuming base at Y=" + str(base_Y))
-        print("Assuming mid at Y=" + str(mid_Y))
-        print("Assuming end at Y=" + str(end_Y) + '\n')
         
         # Load EE pt sequence
         sequence = np.loadtxt('./sequence.csv', dtype=np.float64, delimiter=',')
         X_seq = sequence[:,0]
         Z_seq = sequence[:,1]
         Phi_seq = sequence[:,2]
+        Goals_X = sequence[:,3]
+        Goals_Z = sequence[:,4]
+        Endpt_Sols_X = sequence[:,5]
+        Endpt_Sols_Z = sequence[:,6]
 
         # Data to save
         ts = []
         X_EE = []
+        Y_EE = []
         Z_EE = []
         Phi_EE = []
-        X_base_meas = []
-        Z_base_meas = []
-        X_mid_meas = []
-        Z_mid_meas = []
-        X_end_meas = []
-        Z_end_meas = []
-        U_base = []
-        V_base = []
-        U_mid = []
-        V_mid = []
-        U_end = []
-        V_end = []
-        U_ang_start = []
-        V_ang_start = []
-        U_ang_end = []
-        V_ang_end = []
-        X_ang_start = []
-        Z_ang_start = []
-        X_ang_end = []
-        Z_ang_end = []
-        Base_angle = []
+        Goal_X = []
+        Goal_Z = []
+        Endpt_Sol_X = []
+        Endpt_Sol_Z = []
         os.makedirs('./images')
 
         for i in range(len(X_seq)):
@@ -230,10 +133,8 @@ if __name__ == '__main__':
             else:
               move_home(joint1=-1.15)
 
-            print("Planning to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
+            print("Moving to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
             plan = plan_to_cart(X_seq[i], object_Y_plane, Z_seq[i], pi, 0, Phi_seq[i])
-            print("Ready to move to point")
-            input()
             execute_plan(plan)
             print("Ready to record data")
             input()
@@ -242,64 +143,21 @@ if __name__ == '__main__':
             img_msg = rospy.wait_for_message("/camera/color/image_raw/compressed", CompressedImage, timeout=None)
             ts.append(img_msg.header.stamp) # Use image timestamp for all data
             fr3_msg = rospy.wait_for_message("/franka_state_controller/franka_states", FrankaState, timeout=None)
-            # Process image
+            # Save image
             imgbgr = bridge.compressed_imgmsg_to_cv2(img_msg, desired_encoding="passthrough")
-            img = cv2.cvtColor(imgbgr, cv2.COLOR_BGR2RGB)
-            fig, ax = plt.subplots(figsize=(16, 12))
-            ax.imshow(img)
-            plt.axis('off')
-            print("Select marker points (base, mid, end) in the image; left click - add, right - remove, middle - finish")
-            UVs = plt.ginput(n=-1, timeout=0)
-            plt.close()
-            base_UV = [int(UVs[0][0]), int(UVs[0][1])]
-            mid_UV = [int(UVs[1][0]), int(UVs[1][1])]
-            end_UV = [int(UVs[2][0]), int(UVs[2][1])]
-            base_XZ = UV_to_XZplane(base_UV[0], base_UV[1], base_Y)
-            mid_XZ = UV_to_XZplane(mid_UV[0], mid_UV[1], mid_Y)
-            end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
-            if len(UVs) > 3:
-              base_ang_start_UV = [int(UVs[3][0]), int(UVs[3][1])]
-              base_ang_end_UV = [int(UVs[4][0]), int(UVs[4][1])]
-              base_ang_start_XZ = UV_to_XZplane(base_ang_start_UV[0], base_ang_start_UV[1], end_Y)
-              base_ang_end_XZ = UV_to_XZplane(base_ang_end_UV[0], base_ang_end_UV[1], end_Y)
-              base_ang = np.arctan2(-(base_ang_end_XZ[0]-base_ang_start_XZ[0]),-(base_ang_end_XZ[2]-base_ang_start_XZ[2])) # atan2(-delX,-delZ) because of robot axis shenanigans
-            else:
-              base_ang_start_UV = [0,0]
-              base_ang_end_UV = [0,0]
-              base_ang_start_XZ = [0.0,0.0,0.0]
-              base_ang_end_XZ = [0.0,0.0,0.0]
-              base_ang = 0.0
             cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
-
-            # Process robot state/ end effector position data
+            # Save data. 
             (trans,rot) = tflistener.lookupTransform('/fr3_link0', '/fr3_virtual_EE_link', rospy.Time(0))
             angs = tf.transformations.euler_from_quaternion(rot, axes='sxzy')
-
-            # Save data
             X_EE.append(trans[0])
+            Y_EE.append(trans[1])
             Z_EE.append(trans[2])
             Phi_EE.append(angs[2])
-            X_base_meas.append(base_XZ[0,0])
-            Z_base_meas.append(base_XZ[2,0])
-            X_mid_meas.append(mid_XZ[0,0])
-            Z_mid_meas.append(mid_XZ[2,0])
-            X_end_meas.append(end_XZ[0,0])
-            Z_end_meas.append(end_XZ[2,0])
-            U_base.append(base_UV[0])
-            V_base.append(base_UV[1])
-            U_mid.append(mid_UV[0])
-            V_mid.append(mid_UV[1])
-            U_end.append(end_UV[0])
-            V_end.append(end_UV[1])
-            U_ang_start.append(base_ang_start_UV[0])
-            V_ang_start.append(base_ang_start_UV[1])
-            U_ang_end.append(base_ang_end_UV[0])
-            V_ang_end.append(base_ang_end_UV[1])
-            X_ang_start.append(base_ang_start_XZ[0,0])
-            Z_ang_start.append(base_ang_start_XZ[2,0])
-            X_ang_end.append(base_ang_end_XZ[0,0])
-            Z_ang_end.append(base_ang_end_XZ[2,0])
-            Base_angle.append(base_ang)
+            # The goals and endpoints from model are passed through to make easier to match up the measurements to the input
+            Goal_X.append(Goals_X[i])
+            Goal_Z.append(Goals_Z[i])
+            Endpt_Sol_X.append(Endpt_Sols_X[i])
+            Endpt_Sol_Z.append(Endpt_Sols_Z[i])
             
             print("Data saved, ready to straighten")
             input()
