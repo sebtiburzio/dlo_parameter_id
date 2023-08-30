@@ -26,7 +26,7 @@ def move_home(joint1=0.0,joint6=1.1):
   elif joint1 < -2.5:
     joint1 = -2.5
     print("Clamping joint1 above -2.5 rad")
-  move_group.go(joints=[joint1, -0.8, 0.0, -1.9, 0.0, joint6, -pi/2], wait=True)
+  move_group.go(joints=[joint1, -0.55, 0.0, -1.65, 0.0, joint6, -pi/2], wait=True)
   move_group.stop()
 
 def plan_to_cart(x,y,z, a1, a2, a3, ax1='x', ax2='z', ax3='y', r='s'):
@@ -56,11 +56,13 @@ def execute_plan(plan):
 
 def write_csv():
   # Write data to csv
-  with open('./sequence_results.csv', 'w', newline='') as csvfile:
+  with open('./sequence_experiment.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['ts', 'X_EE', 'Y_EE', 'Z_EE', 'Phi', 'Goal_X', 'Goal_Z', 'Endpt_Sol_X', 'Endpt_Sol_Z'])
+    writer.writerow(['ts', 'X_EE', 'Y_EE', 'Z_EE', 'Phi', 'Goal_X', 'Goal_Z', 'Goal_Phi'])
+                      #'Goal_X', 'Goal_Z', 'Endpt_Sol_X', 'Endpt_Sol_Z'])
     for n in range(len(ts)):
-      writer.writerow([ts[n], X_EE[n], Y_EE[n], Z_EE[n], Phi_EE[n], Goal_X[n], Goal_Z[n], Endpt_Sol_X[n], Endpt_Sol_Z[n]])
+      writer.writerow([ts[n], X_EE[n], Y_EE[n], Z_EE[n], Phi_EE[n], Goal_X[n], Goal_Z[n], Goal_Phi[n]])
+                       #Goal_X[n], Goal_Z[n], Endpt_Sol_X[n], Endpt_Sol_Z[n]])
 
 
 if __name__ == '__main__':
@@ -101,7 +103,7 @@ if __name__ == '__main__':
         bridge = CvBridge()
 
         # Other setup
-        object_Y_plane = -0.2 # Y coordinate of object plane, parallel to XZ plane
+        object_Y_plane = -0.3 # Y coordinate of object plane, parallel to XZ plane
         
         # Load EE pt sequence
         sequence = np.loadtxt('./sequence.csv', dtype=np.float64, delimiter=',')
@@ -110,8 +112,9 @@ if __name__ == '__main__':
         Phi_seq = sequence[:,2]
         Goals_X = sequence[:,3]
         Goals_Z = sequence[:,4]
-        Endpt_Sols_X = sequence[:,5]
-        Endpt_Sols_Z = sequence[:,6]
+        Goals_Phi = sequence[:,5]
+        # Endpt_Sols_X = sequence[:,5]
+        # Endpt_Sols_Z = sequence[:,6]
 
         # Data to save
         ts = []
@@ -121,20 +124,23 @@ if __name__ == '__main__':
         Phi_EE = []
         Goal_X = []
         Goal_Z = []
-        Endpt_Sol_X = []
-        Endpt_Sol_Z = []
+        Goal_Phi = []
+        # Endpt_Sol_X = []
+        # Endpt_Sol_Z = []
         os.makedirs('./images')
 
         for i in range(len(X_seq)):
             
             # Move to better position for planning to highly angled poses
-            if X_seq[i] < 0:
-              move_home(joint1=-2)
+            if X_seq[i] > 0:
+              move_home(joint1=-2.3)
             else:
-              move_home(joint1=-1.15)
+              move_home(joint1=-1.0)
+            # move_home(joint1=-pi/2)
 
-            print("Moving to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
             plan = plan_to_cart(X_seq[i], object_Y_plane, Z_seq[i], pi, 0, Phi_seq[i])
+            print("Ready to move to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
+            input()
             execute_plan(plan)
             print("Ready to record data")
             input()
@@ -156,11 +162,11 @@ if __name__ == '__main__':
             # The goals and endpoints from model are passed through to make easier to match up the measurements to the input
             Goal_X.append(Goals_X[i])
             Goal_Z.append(Goals_Z[i])
-            Endpt_Sol_X.append(Endpt_Sols_X[i])
-            Endpt_Sol_Z.append(Endpt_Sols_Z[i])
+            Goal_Phi.append(Goals_Phi[i])
+            # Endpt_Sol_X.append(Endpt_Sols_X[i])
+            # Endpt_Sol_Z.append(Endpt_Sols_Z[i])
             
-            print("Data saved, ready to straighten")
-            input()
+            print("Data saved, straightening")
 
         print("Sequence complete")
         move_home(joint1=-pi/2)
