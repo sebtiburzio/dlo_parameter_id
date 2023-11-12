@@ -111,7 +111,7 @@ if __name__ == '__main__':
         Phi_seq = sequence[:,2]
         Goals_X = sequence[:,3]
         Goals_Z = sequence[:,4]
-        Goals_Phi = sequence[:,5]
+        Goals_Phi = sequence[:,5] # TODO - this is not Phi, it's the tip angle (alpha). Already saved the data as Phi though.
         # Endpt_Sols_X = sequence[:,5] # Uncomment and modify csv write function if endpt sols are available in the data
         # Endpt_Sols_Z = sequence[:,6] #
 
