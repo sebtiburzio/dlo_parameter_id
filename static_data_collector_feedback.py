@@ -18,6 +18,10 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from math import pi
 
+from generated_functions.floating.floating_base_functions import eval_fk, eval_J_end_wrt_base
+from generated_functions.fixed.fixed_base_functions import eval_midpt, eval_endpt, eval_J_midpt, eval_J_endpt
+target_evaluators = [eval_midpt, eval_endpt, eval_J_midpt, eval_J_endpt]
+from utils import rot_XZ_on_Y, get_FK, find_curvature
 
 def move_home(joint1=0.0,joint6=1.1):
   if joint1 > 0.0:
@@ -180,6 +184,8 @@ if __name__ == '__main__':
             K_cam = tfs['K_cam']
 
         # Other setup
+        with np.load('object_parameters/black_weighted.npz') as obj_params:
+          p_vals = list(obj_params['p_vals']) # cable properties: mass (length), mass (end), length, diameter
         object_Y_plane = -0.2 # Y coordinate of object plane, parallel to XZ plane
         base_Y = object_Y_plane - 0.01
         mid_Y = object_Y_plane - 0.01
@@ -258,7 +264,7 @@ if __name__ == '__main__':
             mid_XZ = UV_to_XZplane(mid_UV[0], mid_UV[1], mid_Y)
             end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
             if len(UVs) > 3:
-              base_ang_start_UV = [int(UVs[3][0]), int(UVs[3][1])]
+              base_ang_start_UV = [int(UVs[3][0]), int(UVs[3][1])] # TODO - change to alpha_ang
               base_ang_end_UV = [int(UVs[4][0]), int(UVs[4][1])]
               base_ang_start_XZ = UV_to_XZplane(base_ang_start_UV[0], base_ang_start_UV[1], end_Y)
               base_ang_end_XZ = UV_to_XZplane(base_ang_end_UV[0], base_ang_end_UV[1], end_Y)
@@ -274,6 +280,26 @@ if __name__ == '__main__':
             # Process robot state/ end effector position data
             (trans,rot) = tflistener.lookupTransform('/fr3_link0', '/fr3_virtual_EE_link', rospy.Time(0))
             angs = tf.transformations.euler_from_quaternion(rot, axes='sxzy')
+
+            #   ### IN FEEDBACK LOOP
+            #   # Extract curvature from marker points
+            #   # Transform marker points to fixed PAC frame (subtract X/Z, rotate back phi)
+            #   fk_targets = np.hstack([rot_XZ_on_Y(np.array([mid_XZ[0,0],mid_XZ[0,2]]),-angs[2]), rot_XZ_on_Y(np.array([end_XZ[0,0],end_XZ[0,2]]),-angs[2])])
+            #   theta_guess = np.array([1e-3,1e-3]) # TODO - get estimate from optimisation solution - need to include in generated sequence.csv
+            #   # Curvature from IK iteration
+            #   theta_extracted, convergence = find_curvature(p_vals, theta_guess, target_evaluators, fk_targets, 0.005)
+              
+            #   # Calculate J^-1
+            #   J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_XZ[0,0], base_XZ[0,2], angs[2]]), p_vals)
+
+            #   # Calc new manipulator pose (pseudo code)
+            #   # manipulator_step = J^-1 * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
+            #   # plan = plan_to_cart(X_current + manipulator_step[0], object_Y_plane, Z_current + manipulator_step[1], pi, 0, Phi_current + manipulator_step[2])
+            #   # execute_plan(plan)
+            #   # Get new image, robot state, user input ...
+            #   ###
+            
+            #   # Save the last image into a separate directory (eg ./images_feedback...)
 
             # Save data
             X_EE.append(trans[0])
