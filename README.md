@@ -48,6 +48,8 @@ image_topic: /camera/color/image_raw
 ```
 This is for the 4x4 Charuco marker. You can also try opening the Rviz config located in `launch/camera_calibration.rviz` instead, which has all the information filled in (note: loading the config hasn't worked properly recently.)
 
+Once the calibration is done, you can save the launch file it generates. As a subsequent step to check the calibration, you can use `calibrations/camera_calibration_adjustment.py`. First save a bagfile with at least one image from the camera into the same folder as the calibration launch file, then step through the script in interactive mode. A camera image will be displayed with some known points (in the robot base frame) plotted over it, which can be used to adjust the transform from the calibration until they line up. The original and adjusted calibration matrices will then be saved to .npz files.
+
 # Topics to record
 
 Camera and robot state:
