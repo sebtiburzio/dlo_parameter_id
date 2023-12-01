@@ -105,7 +105,7 @@ R_adj = R_cam
 P_adj = P
 
 #%%
-# Set up any marked points to compare
+# Set up any known points to compare
 marked_XYZ = np.array([
                        [0.154,0.149,0.0,1.0], # FR3 TERI base
                        [0.154,-0.150,0.0,1.0], # FR3 TERI base
@@ -124,11 +124,13 @@ plot_vis()
 
 #%%
 # Adjust the extrinsic calibration
+# The amounts of adj_* will be added CUMULATIVELY to the transform each time this cell is run
+# The points will then be plotted over the image based on the new transform.
 adj_X = 0.0
 adj_Y = 0.0
 adj_Z = 0.0
 adj_Roll = 0.0
-adj_Pitch = 0.002
+adj_Pitch = 0.0
 adj_Yaw = 0.0
 T_adj = T_adj + np.array([[adj_X],[adj_Y],[adj_Z]])
 R_adj = R.from_euler('xyz', [adj_Roll, adj_Pitch, adj_Yaw]).as_matrix()@R_adj
@@ -144,6 +146,7 @@ np.savez(save_dir + 'TFs.npz', P=P, E_base=E_base, E_cam=E_cam, K_cam=K_cam, T_c
 np.savez(save_dir + './TFs_adj.npz', P=P_adj, E_base=E_base_adj, E_cam=E_cam_adj, K_cam=K_cam, T_cam=T_adj, R_cam=R_adj)
 
 # %%
+# This is for loading the adjusted transform if you want to adjust it more
 TFs_adj = np.load(save_dir + 'TFs_adj.npz')
 P_adj = TFs_adj['P']
 T_adj = TFs_adj['T_cam']
