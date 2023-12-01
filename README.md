@@ -29,6 +29,25 @@ There is also a modified [`bota_demo`](https://github.com/sebtiburzio/bota_demo)
 
 Check the output when launching since if any of the parameters don't match a supported profile (or USB port isn't fast enoguh) it will set everything to default.
 
+# Camera extrinsic calibration
+
+The extrinsic robot base to camera transform can be calibrated using the MoveIt HandEye Calibration module. In Rviz, add the module from under `moveit_calibration_gui`. Fill in the Target Params as:
+```      
+target_type: HandEyeTarget/Charuco
+squares, X: 4
+squares, Y: 4
+marker size (px): 50
+square size (px): 80
+ArUco dictionary: DICT_5X5_250
+margin size (px): 2
+marker border (bits): 1
+longest board side (m): 0.110000
+measured marker size (m): 0.012000
+camera_info_topic: /camera/color/camera_info
+image_topic: /camera/color/image_raw
+```
+This is for the 4x4 Charuco marker. You can also try opening the Rviz config located in `launch/camera_calibration.rviz` instead, which has all the information filled in (note: loading the config hasn't worked properly recently.)
+
 # Topics to record
 
 Camera and robot state:
