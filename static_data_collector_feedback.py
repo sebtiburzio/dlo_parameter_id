@@ -201,8 +201,8 @@ if __name__ == '__main__':
         Phi_seq = sequence[:,2]
         Theta0 = sequence[:,3]
         Theta1 = sequence[:,4]
-        GoalX = sequence[:,5]
-        GoalZ = sequence[:,6]
+        Goals_X = sequence[:,5]
+        Goals_Z = sequence[:,6]
         Endpt_X = sequence[:, 7]
         Endpt_Z = sequence[:, 8]
 
@@ -345,11 +345,13 @@ if __name__ == '__main__':
               fk = eval_fk(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals, 1.0, 0.0)
               print("fk: ", fk)
               J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals)
+              print("J: ", J)
               # J = eval_J_end_wrt_base(base_X, base_Z, Phi_seq[1], p_vals)
 
             #   # Calc new manipulator pose (pseudo code)
               # step direction and magnitude proportional to the gain delta
-              manipulator_step = J^-1 * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
+              # manipulator_step = J^-1 * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
+              manipulator_step = np.linalg.inv(J) #* (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
               # the using moveit update the endeffector position based the error and gain  
               plan = plan_to_cart(X_current + manipulator_step[0], object_Y_plane, Z_current + manipulator_step[1], pi, 0, Phi_current + manipulator_step[2])
               # execute_plan(plan)
