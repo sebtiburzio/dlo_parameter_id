@@ -184,7 +184,7 @@ if __name__ == '__main__':
             K_cam = tfs['K_cam']
 
         # Other setup
-        with np.load('object_parameters/black_weighted.npz') as obj_params:
+        with np.load('/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/object_parameters/black_weighted.npz') as obj_params:
           p_vals = list(obj_params['p_vals']) # cable properties: mass (length), mass (end), length, diameter
         object_Y_plane = -0.2 # Y coordinate of object plane, parallel to XZ plane
         base_Y = object_Y_plane - 0.01
@@ -199,6 +199,12 @@ if __name__ == '__main__':
         X_seq = sequence[:,0]
         Z_seq = sequence[:,1]
         Phi_seq = sequence[:,2]
+        Theta0 = sequence[:,3]
+        Theta1 = sequence[:,4]
+        GoalX = sequence[:,5]
+        GoalZ = sequence[:,6]
+        Endpt_X = sequence[:, 7]
+        Endpt_Z = sequence[:, 8]
 
         # Data to save
         ts = []
@@ -226,21 +232,22 @@ if __name__ == '__main__':
         X_ang_end = []
         Z_ang_end = []
         Base_angle = []
+        # TODO need to check if this is already created
         os.makedirs('./images')
 
         for i in range(len(X_seq)):
             
             # Move to better position for planning to highly angled poses
-            if X_seq[i] < 0:
-              move_home(joint1=-2)
-            else:
-              move_home(joint1=-1.15)
+            # if X_seq[i] < 0:
+            #   move_home(joint1=-2)
+            # else:
+            #   move_home(joint1=-1.15)
 
             print("Planning to point %d: (%3f, %3f, %3f)" % (i, X_seq[i], Z_seq[i], Phi_seq[i]))
             plan = plan_to_cart(X_seq[i], object_Y_plane, Z_seq[i], pi, 0, Phi_seq[i])
             print("Ready to move to point")
             input()
-            execute_plan(plan)
+            # execute_plan(plan)
             print("Ready to record data")
             input()
 
@@ -255,6 +262,7 @@ if __name__ == '__main__':
             ax.imshow(img)
             plt.axis('off')
             print("Select marker points (base, mid, end) in the image; left click - add, right - remove, middle - finish")
+            # Select 5 points on the image, first 3 for the curvature, last 2 for the tip orientation
             UVs = plt.ginput(n=-1, timeout=0)
             plt.close()
             base_UV = [int(UVs[0][0]), int(UVs[0][1])]
@@ -275,29 +283,76 @@ if __name__ == '__main__':
               base_ang_start_XZ = [0.0,0.0,0.0]
               base_ang_end_XZ = [0.0,0.0,0.0]
               base_ang = 0.0
+            # TODO this fails if the .images folder is already there
             cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
 
             # Process robot state/ end effector position data
-            (trans,rot) = tflistener.lookupTransform('/fr3_link0', '/fr3_virtual_EE_link', rospy.Time(0))
-            angs = tf.transformations.euler_from_quaternion(rot, axes='sxzy')
+            # trans and rot of virtual_EE link i.e. the red point/tape on cable
+            (trans, EE_virtual_rot) = tflistener.lookupTransform('/fr3_link0', '/fr3_virtual_EE_link', rospy.Time(0))
+            EE_virtual_angs = tf.transformations.euler_from_quaternion(EE_virtual_rot, axes='sxzy')
 
             #   ### IN FEEDBACK LOOP
+            #---- magic numbers ----#
+            k_gain = 1.0 # proportional gain to the error 
+            error_tol = 0.001 
+
+            # ---- initial esitimate of predicted and measured tip pose ---- #
+            # TODO need to format these to get the norm between them
+            predicted_tip_pose_initial= np.array([Endpt_X[0], Endpt_Z[0]]) # Endpt_X, Endpt_Z are from a generated .csv file
+            print("end_XZ: ", end_XZ)
+            measured_tip_pose_initial = np.array([end_XZ[0][0], end_XZ[2][0]]) # [x, y, z] want to use indexes to get x and z value 
+            print("predicted_tip_pose_initial: ", predicted_tip_pose_initial)
+            print("measured_tip_pose_initial: ", measured_tip_pose_initial)
+            # Initial measurement of tip pose from camera 
+            # TODO theta_guess - from .csv
+
+            # theta_extracted, convergence = find_curvature(p_vals, theta_guess, target_evaluators, fk_targets, 0.005)
+
+            print("error value: ", np.linalg.norm(predicted_tip_pose_initial - measured_tip_pose_initial))
+            if np.linalg.norm(predicted_tip_pose_initial - measured_tip_pose_initial) > error_tol:
             #   # Extract curvature from marker points
             #   # Transform marker points to fixed PAC frame (subtract X/Z, rotate back phi)
-            #   fk_targets = np.hstack([rot_XZ_on_Y(np.array([mid_XZ[0,0],mid_XZ[0,2]]),-angs[2]), rot_XZ_on_Y(np.array([end_XZ[0,0],end_XZ[0,2]]),-angs[2])])
-            #   theta_guess = np.array([1e-3,1e-3]) # TODO - get estimate from optimisation solution - need to include in generated sequence.csv
-            #   # Curvature from IK iteration
-            #   theta_extracted, convergence = find_curvature(p_vals, theta_guess, target_evaluators, fk_targets, 0.005)
+            # fk_targets - moves reference from of curves measured from camera from robot frame to object frame (~EE frame)
+                
               
-            #   # Calculate J^-1
-            #   J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_XZ[0,0], base_XZ[0,2], angs[2]]), p_vals)
+              print("mid_XZ: ", mid_XZ)
+              print("angs: ", EE_virtual_angs)
+              print("end_XZ: ", mid_XZ)
+              # TODO check if this needs a translation along with the rotation. take base_XZ away to move it to object frame (~EE frame)
+              mid_X = mid_XZ[0][0]
+              mid_Z = mid_XZ[2][0]
+
+              end_X = end_XZ[0][0]
+              end_Z = end_XZ[2][0]
+
+              base_X = base_XZ[0][0]
+              base_Z = base_XZ[2][0]
+
+              # fk_targets = np.hstack([rot_XZ_on_Y(np.array([mid_XZ[0, 0],mid_XZ[0,2]]),-EE_virtual_angs[2]), rot_XZ_on_Y(np.array([end_XZ[0,0],end_XZ[0,2]]),-EE_virtual_angs[2])])
+              # 
+              fk_targets = np.hstack([rot_XZ_on_Y(np.array([mid_X - base_X, mid_Z - base_Z]),-EE_virtual_angs[2]), rot_XZ_on_Y(np.array([end_X - base_X, end_Z - base_Z]),-EE_virtual_angs[2])])
+              print("fk_targets: ", fk_targets)
+              theta_guess = np.array([1e-3,1e-3]) # TODO - replace this to get estimate from optimisation solution - need to include in generated sequence.csv. Only on first run, then use next estimate
+            #   # Curvature from IK iteration
+              theta_extracted, convergence = find_curvature(p_vals, theta_guess, target_evaluators, fk_targets, 0.005)
+              
+              print("Phi_seq:", Phi_seq)
+              # Calculate J^-1
+              # J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_XZ[0,0], base_XZ[0,2], angs[2]]), p_vals)
+
+                # def eval_J_end_wrt_base(x, z, phi, p_vals):
+              # TODO ask Seb if these input arguments are need or the one in the function that is defined
+              # J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), Phi_seq[1], p_vals)
+              J = eval_J_end_wrt_base(base_X, base_Z, Phi_seq[1], p_vals)
 
             #   # Calc new manipulator pose (pseudo code)
-            #   # manipulator_step = J^-1 * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
-            #   # plan = plan_to_cart(X_current + manipulator_step[0], object_Y_plane, Z_current + manipulator_step[1], pi, 0, Phi_current + manipulator_step[2])
-            #   # execute_plan(plan)
-            #   # Get new image, robot state, user input ...
-            #   ###
+              # step direction and magnitude proportional to the gain delta
+              manipulator_step = J^-1 * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
+              # the using moveit update the endeffector position based the error and gain  
+              plan = plan_to_cart(X_current + manipulator_step[0], object_Y_plane, Z_current + manipulator_step[1], pi, 0, Phi_current + manipulator_step[2])
+              # execute_plan(plan)
+              # Get new image, robot state, user input ...
+              ##
             
             #   # Save the last image into a separate directory (eg ./images_feedback...)
 

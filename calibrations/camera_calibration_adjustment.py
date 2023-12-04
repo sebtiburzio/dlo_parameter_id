@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_1309' # The calibration date format is backwards compared to the data collection date format :[
+calib_name = 'calib_0112' # The calibration date format is backwards compared to the data collection date format :[
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
@@ -126,9 +126,9 @@ plot_vis()
 # Adjust the extrinsic calibration
 adj_X = 0.0
 adj_Y = 0.0
-adj_Z = 0.0
-adj_Roll = 0.0
-adj_Pitch = 0.002
+adj_Z = -0.002
+adj_Roll = 0.00
+adj_Pitch = 0.0
 adj_Yaw = 0.0
 T_adj = T_adj + np.array([[adj_X],[adj_Y],[adj_Z]])
 R_adj = R.from_euler('xyz', [adj_Roll, adj_Pitch, adj_Yaw]).as_matrix()@R_adj

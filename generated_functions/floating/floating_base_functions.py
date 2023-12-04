@@ -18,15 +18,18 @@ s, d = sm.symbols('s d')
 gamma = sm.symbols('gamma')  
 
 # Load serialised functions # TODO (maybe) - swap order of theta a p arguments to match matlab code style
-f_FK = sm.lambdify((q,p,s,d), pickle.load(open("./generated_functions/floating/fk", "rb")), "mpmath")
+# f_FK = sm.lambdify((q,p,s,d), pickle.load(open("./generated_functions/floating/fk", "rb")), "mpmath")
+f_FK = sm.lambdify((q,p,s,d), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/floating/fk", "rb")), "mpmath")
 def eval_fk(q, p_vals, s, d): 
     return np.array(f_FK(q, p_vals, s, d).apply(mp.re).tolist(), dtype=float)
 
-f_FKA = sm.lambdify((q,p,s,d), pickle.load(open("./generated_functions/floating/fka", "rb")), "mpmath")
+# f_FKA = sm.lambdify((q,p,s,d), pickle.load(open("./generated_functions/floating/fka", "rb")), "mpmath")
+f_FKA = sm.lambdify((q,p,s,d), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/floating/fka", "rb")), "mpmath")
 def eval_fka(q, p_vals, s, d): 
     return np.array(f_FKA(q, p_vals, s, d).apply(mp.re).tolist(), dtype=float)
 
-f_J_end_wrt_base = sm.lambdify((x,z,phi,p), pickle.load(open("./generated_functions/floating/J_end_wrt_base", "rb")), "mpmath")
+# f_J_end_wrt_base = sm.lambdify((x,z,phi,p), pickle.load(open("./generated_functions/floating/J_end_wrt_base", "rb")), "mpmath")
+f_J_end_wrt_base = sm.lambdify((x,z,phi,p), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/floating/J_end_wrt_base", "rb")), "mpmath")
 def eval_J_end_wrt_base(x, z, phi, p_vals):
     return np.array(f_J_end_wrt_base(x, z, phi, p_vals).apply(mp.re).tolist(), dtype=float)
 
