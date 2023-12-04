@@ -342,8 +342,10 @@ if __name__ == '__main__':
 
                 # def eval_J_end_wrt_base(x, z, phi, p_vals):
               # TODO ask Seb if these input arguments are need or the one in the function that is defined
-              # J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), Phi_seq[1], p_vals)
-              J = eval_J_end_wrt_base(base_X, base_Z, Phi_seq[1], p_vals)
+              fk = eval_fk(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals, 1.0, 0.0)
+              print("fk: ", fk)
+              J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals)
+              # J = eval_J_end_wrt_base(base_X, base_Z, Phi_seq[1], p_vals)
 
             #   # Calc new manipulator pose (pseudo code)
               # step direction and magnitude proportional to the gain delta
