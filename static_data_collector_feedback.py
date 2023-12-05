@@ -186,7 +186,7 @@ if __name__ == '__main__':
         # Other setup
         with np.load('/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/object_parameters/black_weighted.npz') as obj_params:
           p_vals = list(obj_params['p_vals']) # cable properties: mass (length), mass (end), length, diameter
-        object_Y_plane = -0.2 # Y coordinate of object plane, parallel to XZ plane
+        object_Y_plane = -0.3 # Y coordinate of object plane, parallel to XZ plane
         base_Y = object_Y_plane - 0.01
         mid_Y = object_Y_plane - 0.01
         end_Y = object_Y_plane - 0.015
@@ -203,8 +203,10 @@ if __name__ == '__main__':
         Theta1 = sequence[:,4]
         Goals_X = sequence[:,5]
         Goals_Z = sequence[:,6]
-        Endpt_X = sequence[:, 7]
-        Endpt_Z = sequence[:, 8]
+        Goals_Alpha = sequence[:, 7]
+        Endpt_X = sequence[:, 8]
+        Endpt_Z = sequence[:, 9]
+        Endpt_Alpha = sequence[:, 10]
 
         # Data to save
         ts = []
@@ -247,7 +249,7 @@ if __name__ == '__main__':
             plan = plan_to_cart(X_seq[i], object_Y_plane, Z_seq[i], pi, 0, Phi_seq[i])
             print("Ready to move to point")
             input()
-            # execute_plan(plan)
+            execute_plan(plan)
             print("Ready to record data")
             input()
 
@@ -268,6 +270,7 @@ if __name__ == '__main__':
             base_UV = [int(UVs[0][0]), int(UVs[0][1])]
             mid_UV = [int(UVs[1][0]), int(UVs[1][1])]
             end_UV = [int(UVs[2][0]), int(UVs[2][1])]
+            print("end_UV: ", end_UV)
             base_XZ = UV_to_XZplane(base_UV[0], base_UV[1], base_Y)
             mid_XZ = UV_to_XZplane(mid_UV[0], mid_UV[1], mid_Y)
             end_XZ = UV_to_XZplane(end_UV[0], end_UV[1], end_Y)
@@ -283,6 +286,7 @@ if __name__ == '__main__':
               base_ang_start_XZ = [0.0,0.0,0.0]
               base_ang_end_XZ = [0.0,0.0,0.0]
               base_ang = 0.0
+
             # TODO this fails if the .images folder is already there
             cv2.imwrite('./images/' + str(ts[i]) + '.jpg', imgbgr)
 
@@ -293,7 +297,7 @@ if __name__ == '__main__':
 
             #   ### IN FEEDBACK LOOP
             #---- magic numbers ----#
-            k_gain = 1.0 # proportional gain to the error 
+            k_gain = 0.01 # proportional gain to the error 
             error_tol = 0.001 
 
             # ---- initial esitimate of predicted and measured tip pose ---- #
@@ -317,7 +321,8 @@ if __name__ == '__main__':
               
               print("mid_XZ: ", mid_XZ)
               print("angs: ", EE_virtual_angs)
-              print("end_XZ: ", mid_XZ)
+              print("end_XZ: ", end_XZ)
+              print("alpha ang: ", base_ang)
               # TODO check if this needs a translation along with the rotation. take base_XZ away to move it to object frame (~EE frame)
               mid_X = mid_XZ[0][0]
               mid_Z = mid_XZ[2][0]
@@ -351,40 +356,45 @@ if __name__ == '__main__':
             #   # Calc new manipulator pose (pseudo code)
               # step direction and magnitude proportional to the gain delta
               # manipulator_step = J^-1 * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
-              manipulator_step = np.linalg.inv(J) #* (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
+              # manipulator_step = np.linalg.inv(J) * (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_XZ[0,0], end_XZ[0,2], alpha_ang])) * delta
+              manipulator_step = np.linalg.inv(J) @ (np.array([Goals_X[i], Goals_Z[i], Goals_Alpha[i]]) - np.array([end_X, end_Z, base_ang])) * k_gain
+
+              print("manipulator_step: ", manipulator_step)
               # the using moveit update the endeffector position based the error and gain  
-              plan = plan_to_cart(X_current + manipulator_step[0], object_Y_plane, Z_current + manipulator_step[1], pi, 0, Phi_current + manipulator_step[2])
-              # execute_plan(plan)
+              plan = plan_to_cart(base_X + manipulator_step[0][0], object_Y_plane, base_Z + manipulator_step[1][0], np.pi, 0, EE_virtual_angs[2] + manipulator_step[2][0])
+              print("Input to execute feedback")
+              input()
+              execute_plan(plan)
               # Get new image, robot state, user input ...
               ##
             
             #   # Save the last image into a separate directory (eg ./images_feedback...)
 
             # Save data
-            X_EE.append(trans[0])
-            Z_EE.append(trans[2])
-            Phi_EE.append(angs[2])
-            X_base_meas.append(base_XZ[0,0])
-            Z_base_meas.append(base_XZ[2,0])
-            X_mid_meas.append(mid_XZ[0,0])
-            Z_mid_meas.append(mid_XZ[2,0])
-            X_end_meas.append(end_XZ[0,0])
-            Z_end_meas.append(end_XZ[2,0])
-            U_base.append(base_UV[0])
-            V_base.append(base_UV[1])
-            U_mid.append(mid_UV[0])
-            V_mid.append(mid_UV[1])
-            U_end.append(end_UV[0])
-            V_end.append(end_UV[1])
-            U_ang_start.append(base_ang_start_UV[0])
-            V_ang_start.append(base_ang_start_UV[1])
-            U_ang_end.append(base_ang_end_UV[0])
-            V_ang_end.append(base_ang_end_UV[1])
-            X_ang_start.append(base_ang_start_XZ[0,0])
-            Z_ang_start.append(base_ang_start_XZ[2,0])
-            X_ang_end.append(base_ang_end_XZ[0,0])
-            Z_ang_end.append(base_ang_end_XZ[2,0])
-            Base_angle.append(base_ang)
+            # X_EE.append(trans[0])
+            # Z_EE.append(trans[2])
+            # Phi_EE.append(angs[2])
+            # X_base_meas.append(base_XZ[0,0])
+            # Z_base_meas.append(base_XZ[2,0])
+            # X_mid_meas.append(mid_XZ[0,0])
+            # Z_mid_meas.append(mid_XZ[2,0])
+            # X_end_meas.append(end_XZ[0,0])
+            # Z_end_meas.append(end_XZ[2,0])
+            # U_base.append(base_UV[0])
+            # V_base.append(base_UV[1])
+            # U_mid.append(mid_UV[0])
+            # V_mid.append(mid_UV[1])
+            # U_end.append(end_UV[0])
+            # V_end.append(end_UV[1])
+            # U_ang_start.append(base_ang_start_UV[0])
+            # V_ang_start.append(base_ang_start_UV[1])
+            # U_ang_end.append(base_ang_end_UV[0])
+            # V_ang_end.append(base_ang_end_UV[1])
+            # X_ang_start.append(base_ang_start_XZ[0,0])
+            # Z_ang_start.append(base_ang_start_XZ[2,0])
+            # X_ang_end.append(base_ang_end_XZ[0,0])
+            # Z_ang_end.append(base_ang_end_XZ[2,0])
+            # Base_angle.append(base_ang)
             
             print("Data saved, ready to straighten")
             input()
