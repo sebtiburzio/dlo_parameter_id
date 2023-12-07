@@ -12,8 +12,14 @@ import numpy as np
 from math import pi
 
 
-def move_home(joint1=0.0,joint6=0.9):
-  move_group.go(joints=[joint1, -0.1, 0.0, -1.0, 0.0, joint6, 0], wait=True) # EE close to [0.4, 0.0, 0.8] oriented Z down
+def move_home(joint1=0.0,joint6=1.1):
+  if joint1 > 0.0:
+    joint1 = 0.0
+    print("Clamping joint1 below 0.0 rad")
+  elif joint1 < -2.5:
+    joint1 = -2.5
+    print("Clamping joint1 above -2.5 rad")
+  move_group.go(joints=[joint1, -0.55, 0.0, -1.65, 0.0, joint6, -pi/2], wait=True)
   move_group.stop()
 
 def plan_to_quaternion(x,y,z, qx, qy, qz ,qw):
@@ -118,8 +124,8 @@ robot = moveit_commander.RobotCommander()
 scene = moveit_commander.PlanningSceneInterface()
 group_name = "fr3_arm"
 move_group = moveit_commander.MoveGroupCommander(group_name)
-move_group.set_max_acceleration_scaling_factor(0.1)
-move_group.set_max_velocity_scaling_factor(0.1)
+move_group.set_max_acceleration_scaling_factor(0.1) # Note these don't affect cartesian paths. Use retime_trajectory
+move_group.set_max_velocity_scaling_factor(0.1)     #
 planning_frame = move_group.get_planning_frame()
 print("============ Planning frame: %s" % planning_frame)
 eef_link = move_group.get_end_effector_link()
@@ -135,11 +141,13 @@ display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path
                                               queue_size=20)
 
 #%%
+# Path from a csv file
 path = np.loadtxt('./orange_grid_horiz_RHS.csv', dtype=np.float64, delimiter=',')
 xs = path[:,0]
 zs = path[:,1]
 phis = path[:,2]
+# To first point
 plan = plan_to_cart(xs[0], -0.2, zs[0], pi, 0, phis[0])
 #%%
+# Full path
 plan = plan_cart_path(xs,zs,phis)
-# %%

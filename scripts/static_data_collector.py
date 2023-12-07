@@ -55,7 +55,6 @@ def execute_plan(plan):
   plan = None
 
 def write_csv():
-  # Write data to csv
   with open('./sequence_experiment.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter=',')
     writer.writerow(['ts', 'X_EE', 'Y_EE', 'Z_EE', 'Phi', 'Goal_X', 'Goal_Z', 'Goal_Phi'])
@@ -83,8 +82,8 @@ if __name__ == '__main__':
         scene = moveit_commander.PlanningSceneInterface()
         group_name = "fr3_arm"
         move_group = moveit_commander.MoveGroupCommander(group_name)
-        move_group.set_max_acceleration_scaling_factor(0.1)
-        move_group.set_max_velocity_scaling_factor(0.1)
+        move_group.set_max_acceleration_scaling_factor(0.1) # Note these don't affect cartesian paths. Use retime_trajectory
+        move_group.set_max_velocity_scaling_factor(0.1)     #
         planning_frame = move_group.get_planning_frame()
         print("============ Planning frame: %s" % planning_frame)
         eef_link = move_group.get_end_effector_link()
@@ -112,9 +111,9 @@ if __name__ == '__main__':
         Phi_seq = sequence[:,2]
         Goals_X = sequence[:,3]
         Goals_Z = sequence[:,4]
-        Goals_Phi = sequence[:,5]
-        # Endpt_Sols_X = sequence[:,5]
-        # Endpt_Sols_Z = sequence[:,6]
+        Goals_Phi = sequence[:,5] # TODO - this is not Phi, it's the tip angle (alpha). Already saved the data as Phi though.
+        # Endpt_Sols_X = sequence[:,5] # Uncomment and modify csv write function if endpt sols are available in the data
+        # Endpt_Sols_Z = sequence[:,6] #
 
         # Data to save
         ts = []
