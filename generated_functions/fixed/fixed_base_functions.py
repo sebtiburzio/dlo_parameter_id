@@ -17,23 +17,28 @@ s, d = sm.symbols('s d')
 gamma = sm.symbols('gamma')  
 
 # Load serialised functions # TODO (maybe) - swap order of theta a p arguments to match matlab code style
-f_FK = sm.lambdify((theta,p,s,d), pickle.load(open("../../../generated_functions/fixed/fk", "rb")), "mpmath")
+# f_FK = sm.lambdify((theta,p,s,d), pickle.load(open("../../../generated_functions/fixed/fk", "rb")), "mpmath")
+f_FK = sm.lambdify((theta,p,s,d), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/fixed/fk", "rb")), "mpmath")
 def eval_fk(theta, p_vals, s, d): 
     return np.array(f_FK(theta, p_vals, s, d).apply(mp.re).tolist(), dtype=float)
 
-f_FK_mid = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/fk_mid_fixed", "rb")), "mpmath")
+# f_FK_mid = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/fk_mid_fixed", "rb")), "mpmath")
+f_FK_mid = sm.lambdify((theta,p), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/fixed/fk_mid_fixed", "rb")), "mpmath")
 def eval_midpt(theta, p_vals): 
     return np.array(f_FK_mid(theta, p_vals).apply(mp.re).tolist(), dtype=float)
 
-f_FK_end = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/fk_end_fixed", "rb")), "mpmath")
+# f_FK_end = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/fk_end_fixed", "rb")), "mpmath")
+f_FK_end = sm.lambdify((theta,p), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/fixed/fk_end_fixed", "rb")), "mpmath")
 def eval_endpt(theta, p_vals): 
     return np.array(f_FK_end(theta, p_vals).apply(mp.re).tolist(), dtype=float)
 
-f_J_mid = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/J_mid_fixed", "rb")), "mpmath")
+# f_J_mid = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/J_mid_fixed", "rb")), "mpmath")
+f_J_mid = sm.lambdify((theta,p), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/fixed/J_mid_fixed", "rb")), "mpmath")
 def eval_J_midpt(theta, p_vals): 
     return np.array(f_J_mid(theta, p_vals).apply(mp.re).tolist(), dtype=float)
 
-f_J_end = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/J_end_fixed", "rb")), "mpmath")
+# f_J_end = sm.lambdify((theta,p), pickle.load(open("../../../generated_functions/fixed/J_end_fixed", "rb")), "mpmath")
+f_J_end = sm.lambdify((theta,p), pickle.load(open("/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/generated_functions/fixed/J_end_fixed", "rb")), "mpmath")
 def eval_J_endpt(theta, p_vals): 
     return np.array(f_J_end(theta, p_vals).apply(mp.re).tolist(), dtype=float)
 

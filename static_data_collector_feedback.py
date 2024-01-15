@@ -18,10 +18,15 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from math import pi
 
-from generated_functions.floating.floating_base_functions import eval_fk, eval_J_end_wrt_base
-from generated_functions.fixed.fixed_base_functions import eval_midpt, eval_endpt, eval_J_midpt, eval_J_endpt
-target_evaluators = [eval_midpt, eval_endpt, eval_J_midpt, eval_J_endpt]
-from utils import rot_XZ_on_Y, get_FK, find_curvature
+# from generated_functions.floating.floating_base_functions import eval_fk, eval_J_end_wrt_base
+# from generated_functions.fixed.fixed_base_functions import eval_midpt, eval_endpt, eval_J_midpt, eval_J_endpt
+
+from acdlo import floating_base
+from acdlo import static_base
+
+
+target_evaluators = [static_base.eval_midpt, static_base.eval_endpt, static_base.eval_J_midpt, static_base.eval_J_endpt]
+from utils import rot_XZ_on_Y, get_FK, find_curvature, plot_feedback_process, plot_delta_x_progress, plot_error_progress
 
 def move_home(joint1=0.0,joint6=1.1):
   if joint1 > 0.0:
@@ -178,6 +183,9 @@ if __name__ == '__main__':
         tflistener = tf.TransformListener()
         bridge = CvBridge()
 
+
+        targets_path = "/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/data/12-19/test/sequence.csv"
+        data_path = "/home/mossy/Documents/Delft/MSc_students/Seb/dlo_parameter_id/data/12-19/test/sequence_results.csv"
         # Camera intrinsic and extrinsic transforms
         with np.load('../TFs_adj.npz') as tfs:
             P = tfs['P']
@@ -460,7 +468,7 @@ if __name__ == '__main__':
 
               # fk = eval_fk(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals, 1.0, 0.0)
               # print("fk: ", fk)
-              J = eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals)
+              J = floating_base.eval_J_end_wrt_base(np.array([theta_extracted[0], theta_extracted[1], base_X, base_Z, EE_virtual_angs[2]]), p_vals)
               # print("J: ", J)
 
               # Calc new manipulator pose (pseudo code)
@@ -474,7 +482,13 @@ if __name__ == '__main__':
               print("planned manipulator goal: ", (base_X + manipulator_step[0][0], object_Y_plane, base_Z + manipulator_step[1][0], np.pi, 0, EE_virtual_angs[2] + manipulator_step[2][0]))
               # print("planned manipulator step: ", "X: ", manipulator_step[0][0], "Y: ", 0.0, "Z: ", manipulator_step[1][0], "Alpha: ", manipulator_step[2][0])
               plan = plan_to_cart(base_X + manipulator_step[0][0], object_Y_plane, base_Z + manipulator_step[1][0], np.pi, 0, EE_virtual_angs[2] + manipulator_step[2][0])
+
+              # data =  
+
+              # plot_feedback_process(data, targets)
+
               print("Input to execute feedback")
+              #TODO sometimes this doens't get called
               input()
               execute_plan(plan)
               print("Ready to record data")
@@ -577,6 +591,12 @@ if __name__ == '__main__':
               Base_angle.append(base_ang[0])
               Theta0.append(theta_extracted[0])
               Theta1.append(theta_extracted[1])
+
+
+
+              write_csv()
+
+              plot_feedback_process(data_path=data_path, targets_path=targets_path)
               
             
             print("Finished feedbabck, ready to straighten")

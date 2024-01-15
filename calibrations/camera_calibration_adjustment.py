@@ -64,7 +64,7 @@ def plot_vis():
 
 #%%
 
-calib_name = 'calib_0512' # The calibration date format is backwards compared to the data collection date format :[
+calib_name = 'calib_1912' # The calibration date format is backwards compared to the data collection date format :[
 save_dir = './' + calib_name + '/'
 bag = rosbag.Bag(save_dir + calib_name + '.bag', "r")
 print(save_dir)
